@@ -1,4 +1,6 @@
-﻿import type { AppState } from "../types";
+import type { AppState } from "../types";
+
+const today = new Date().toISOString();
 
 export const seedState: AppState = {
   hasOnboarded: false,
@@ -11,32 +13,41 @@ export const seedState: AppState = {
   xp: 180,
   streak: 4,
   modules: {
-    "saving-goals-101": { completed: true, score: 92, highestStep: 3, completedAt: new Date().toISOString() },
-    "paycheck-rule": { completed: false, score: 65, highestStep: 2 },
-    "needs-vs-wants": { completed: false, score: 0, highestStep: 0 },
-    "interest-rates": { completed: false, score: 0, highestStep: 0 },
-    "borrowing-basics": { completed: false, score: 0, highestStep: 0 },
-    "big-purchase-planning": { completed: false, score: 0, highestStep: 0 },
-    "taxes-australia": { completed: false, score: 0, highestStep: 0 },
-    "scams-safety": { completed: false, score: 0, highestStep: 0 },
+    "saving-bank-accounts": { completed: true, score: 94, highestStep: 3, completedAt: today },
+    "interest-rates-loans": { completed: false, score: 68, highestStep: 2 },
+    "taxes-employment": { completed: false, score: 0, highestStep: 0 },
+    "stock-market-basics": { completed: false, score: 0, highestStep: 0 },
+    "wise-spending": { completed: false, score: 0, highestStep: 0 },
   },
-  savingsGoal: {
-    title: "First Car Fund",
-    targetAmount: 3500,
-    currentAmount: 620,
-    timelineWeeks: 40,
-  },
+  savingsGoals: [
+    {
+      id: "goal-laptop",
+      title: "Laptop Upgrade Fund",
+      targetAmount: 1800,
+      currentAmount: 950,
+      timelineWeeks: 20,
+      createdAt: "2026-01-20T00:00:00.000Z",
+    },
+    {
+      id: "goal-emergency",
+      title: "Mini Emergency Buffer",
+      targetAmount: 500,
+      currentAmount: 500,
+      timelineWeeks: 12,
+      completedAt: "2026-02-24T00:00:00.000Z",
+      createdAt: "2026-01-28T00:00:00.000Z",
+    },
+  ],
   savingsLog: [
-    { date: "2026-02-01", amount: 60 },
-    { date: "2026-02-08", amount: 80 },
-    { date: "2026-02-15", amount: 95 },
-    { date: "2026-02-22", amount: 70 },
+    { id: "log-1", goalId: "goal-laptop", date: "2026-02-01", amount: 60 },
+    { id: "log-2", goalId: "goal-laptop", date: "2026-02-08", amount: 80 },
+    { id: "log-3", goalId: "goal-laptop", date: "2026-02-15", amount: 110 },
+    { id: "log-4", goalId: "goal-emergency", date: "2026-02-22", amount: 120 },
   ],
   badges: [
-    { id: "first-seed", label: "First Seed", description: "Completed your first module." },
+    { id: "first-branch", label: "First Branch", description: "Completed your first learning module." },
     { id: "streak-3", label: "3-Day Streak", description: "Returned to learn 3 days in a row." },
   ],
-  inventory: ["Sprout Pot", "Sunflower Patch"],
   paychecks: [
     {
       id: "pay-1",
@@ -66,4 +77,3 @@ export const seedState: AppState = {
   ],
   darkMode: false,
 };
-

@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -11,7 +11,7 @@ const steps: Array<{ key: FieldKey; title: string; description: string; choices:
   {
     key: "ageRange",
     title: "How old are you?",
-    description: "We tailor examples by age range.",
+    description: "We tailor the examples to your stage of life.",
     choices: [
       { label: "13-15", value: "13-15" },
       { label: "16-17", value: "16-17" },
@@ -20,19 +20,19 @@ const steps: Array<{ key: FieldKey; title: string; description: string; choices:
   },
   {
     key: "goal",
-    title: "What are you saving for?",
-    description: "Pick your first garden mission.",
+    title: "What goal matters most right now?",
+    description: "This helps personalise your first savings examples.",
     choices: [
       { label: "Car", value: "car" },
       { label: "Phone", value: "phone" },
-      { label: "Holiday", value: "holiday" },
+      { label: "Travel", value: "travel" },
       { label: "Emergency fund", value: "emergency" },
     ],
   },
   {
     key: "incomeStyle",
     title: "Your income style",
-    description: "Choose what best fits right now.",
+    description: "Choose the option that best matches your current money flow.",
     choices: [
       { label: "Casual job", value: "casual-job" },
       { label: "Allowance", value: "allowance" },
@@ -42,7 +42,7 @@ const steps: Array<{ key: FieldKey; title: string; description: string; choices:
   {
     key: "confidence",
     title: "Money confidence",
-    description: "This sets module tone and pacing.",
+    description: "We use this to shape the tone of your learning journey.",
     choices: [
       { label: "Just starting", value: "just-starting" },
       { label: "Getting there", value: "getting-there" },
@@ -74,14 +74,14 @@ export function OnboardingPage() {
   const next = () => {
     if (index < steps.length - 1) return setIndex((prev) => prev + 1);
     completeOnboarding(data);
-    navigate("/app/garden");
+    navigate("/app/tree");
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-sky-50 to-lime-50 p-4 dark:from-emerald-950 dark:via-zinc-900 dark:to-sky-950">
-      <Card className="w-full max-w-xl">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-sky-50 to-teal-50 p-4 dark:from-emerald-950 dark:via-zinc-900 dark:to-sky-950">
+      <Card className="w-full max-w-xl border-white/60 bg-white/90 shadow-[0_24px_80px_-42px_rgba(14,116,144,0.45)] dark:border-white/10 dark:bg-zinc-950/85">
         <CardHeader>
-          <CardTitle>Welcome to MoneyGarden AU</CardTitle>
+          <CardTitle>Welcome to Learning Tree AU</CardTitle>
           <CardDescription>{step.description}</CardDescription>
           <div className="mt-2 h-2 rounded-full bg-muted">
             <div className="h-full rounded-full bg-emerald-500" style={{ width: `${progress}%` }} />
@@ -109,11 +109,10 @@ export function OnboardingPage() {
             <Button variant="outline" onClick={() => setIndex((prev) => Math.max(0, prev - 1))} disabled={index === 0}>
               Back
             </Button>
-            <Button onClick={next}>{index === steps.length - 1 ? "Enter Garden" : "Continue"}</Button>
+            <Button onClick={next}>{index === steps.length - 1 ? "Enter Learning Tree" : "Continue"}</Button>
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-

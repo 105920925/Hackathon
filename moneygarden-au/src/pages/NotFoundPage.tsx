@@ -1,14 +1,14 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 
 export function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="text-center">
-        <h1 className="mb-2 text-3xl font-bold">Page not found</h1>
-        <p className="mb-4 text-muted-foreground">This garden path does not exist.</p>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-4xl font-black">Page not found</h1>
+        <p className="mb-4 mt-2 text-muted-foreground">That branch does not exist in the app.</p>
         <Button asChild>
-          <Link to="/">Go home</Link>
+          <Link to="/app/tree">Back to Learning Tree</Link>
         </Button>
       </div>
     </div>

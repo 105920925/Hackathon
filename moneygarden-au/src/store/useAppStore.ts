@@ -1,15 +1,16 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { seedState } from "../data/seed";
-import { moduleMap } from "../data/modules";
-import { getGardenLevel, getUnlocksForLevel } from "../lib/game";
-import type { AppState, OnboardingData } from "../types";
+import { moduleMap, modules } from "../data/modules";
+import type { AppState, OnboardingData, SavingsGoal, SavingsGoalDraft, SavingsLogEntry } from "../types";
 
 type Store = AppState & {
   completeOnboarding: (payload: OnboardingData) => void;
   addXp: (amount: number) => void;
-  logSavings: (amount: number) => { ok: boolean; message: string };
-  updateSavingsGoal: (targetAmount: number, timelineWeeks: number, title: string) => void;
+  addSavingsGoal: (payload: SavingsGoalDraft) => void;
+  updateSavingsGoal: (goalId: string, payload: SavingsGoalDraft) => void;
+  removeSavingsGoal: (goalId: string) => void;
+  logSavings: (goalId: string, amount: number) => { ok: boolean; message: string };
   completeModule: (moduleId: string, score: number, completedSteps: number) => void;
   setModuleProgress: (moduleId: string, highestStep: number, score: number) => void;
   updateBudgetValue: (category: string, amount: number) => void;
@@ -17,75 +18,205 @@ type Store = AppState & {
   resetProgress: () => void;
 };
 
-const ensureInventory = (xp: number) => getUnlocksForLevel(getGardenLevel(xp));
+type LegacyState = Partial<AppState> & {
+  savingsGoal?: {
+    targetAmount?: number;
+    currentAmount?: number;
+    timelineWeeks?: number;
+    title?: string;
+  };
+  savingsLog?: Array<{ date?: string; amount?: number; goalId?: string; id?: string }>;
+};
 
 const safeNumber = (value: unknown, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
-const normalizeSavingsGoal = (state?: Partial<AppState>) => ({
-  ...seedState.savingsGoal,
-  ...(state?.savingsGoal ?? {}),
-  targetAmount: safeNumber(state?.savingsGoal?.targetAmount, seedState.savingsGoal.targetAmount),
-  currentAmount: safeNumber(state?.savingsGoal?.currentAmount, seedState.savingsGoal.currentAmount),
-  timelineWeeks: safeNumber(state?.savingsGoal?.timelineWeeks, seedState.savingsGoal.timelineWeeks),
-  title:
-    typeof state?.savingsGoal?.title === "string" && state.savingsGoal.title.trim()
-      ? state.savingsGoal.title
-      : seedState.savingsGoal.title,
-});
+const createId = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
-const normalizeState = (state?: Partial<AppState>): AppState => ({
-  ...seedState,
-  ...state,
-  onboarding: {
-    ...seedState.onboarding,
-    ...(state?.onboarding ?? {}),
-  },
-  savingsGoal: normalizeSavingsGoal(state),
-  modules: {
-    ...seedState.modules,
-    ...(state?.modules ?? {}),
-  },
-  badges: Array.isArray(state?.badges) ? state.badges : seedState.badges,
-  inventory: Array.isArray(state?.inventory) ? state.inventory : seedState.inventory,
-  paychecks: Array.isArray(state?.paychecks) ? state.paychecks : seedState.paychecks,
-  budget: Array.isArray(state?.budget) ? state.budget : seedState.budget,
-  savingsLog: Array.isArray(state?.savingsLog) ? state.savingsLog : seedState.savingsLog,
-});
+function normalizeGoal(goal: Partial<SavingsGoal>, fallback: SavingsGoal): SavingsGoal {
+  const currentAmount = safeNumber(goal.currentAmount, fallback.currentAmount);
+  const targetAmount = Math.max(1, safeNumber(goal.targetAmount, fallback.targetAmount));
+
+  return {
+    id: typeof goal.id === "string" && goal.id.trim() ? goal.id : fallback.id,
+    title: typeof goal.title === "string" && goal.title.trim() ? goal.title : fallback.title,
+    currentAmount: Math.min(currentAmount, targetAmount),
+    targetAmount,
+    timelineWeeks: Math.max(1, safeNumber(goal.timelineWeeks, fallback.timelineWeeks)),
+    createdAt: typeof goal.createdAt === "string" ? goal.createdAt : fallback.createdAt,
+    completedAt:
+      Math.min(currentAmount, targetAmount) >= targetAmount
+        ? typeof goal.completedAt === "string"
+          ? goal.completedAt
+          : new Date().toISOString()
+        : undefined,
+  };
+}
+
+function normalizeSavingsGoals(state?: LegacyState) {
+  const fallbackGoals = seedState.savingsGoals;
+
+  if (Array.isArray(state?.savingsGoals) && state.savingsGoals.length > 0) {
+    return state.savingsGoals.map((goal, index) => normalizeGoal(goal, fallbackGoals[index] ?? fallbackGoals[0]));
+  }
+
+  if (state?.savingsGoal) {
+    // Migrate the previous single-goal model into the new multi-goal array without dropping user progress.
+    return [
+      normalizeGoal(
+        {
+          id: "legacy-goal",
+          createdAt: new Date().toISOString(),
+          ...state.savingsGoal,
+        },
+        fallbackGoals[0],
+      ),
+    ];
+  }
+
+  return fallbackGoals;
+}
+
+function normalizeSavingsLog(state: LegacyState | undefined, savingsGoals: SavingsGoal[]): SavingsLogEntry[] {
+  const fallbackGoalId = savingsGoals[0]?.id ?? seedState.savingsGoals[0].id;
+
+  if (!Array.isArray(state?.savingsLog)) return seedState.savingsLog;
+
+  return state.savingsLog
+    .map((entry, index) => ({
+      id: typeof entry.id === "string" && entry.id.trim() ? entry.id : `log-${index + 1}`,
+      goalId: typeof entry.goalId === "string" && entry.goalId.trim() ? entry.goalId : fallbackGoalId,
+      date: typeof entry.date === "string" ? entry.date : new Date().toISOString().slice(0, 10),
+      amount: safeNumber(entry.amount, 0),
+    }))
+    .filter((entry) => entry.amount > 0);
+}
+
+function normalizeState(state?: LegacyState): AppState {
+  const savingsGoals = normalizeSavingsGoals(state);
+  const rawGoal = (state?.onboarding as { goal?: string } | undefined)?.goal;
+  const savedGoal =
+    rawGoal === "holiday"
+      ? "travel"
+      : rawGoal === "car" || rawGoal === "phone" || rawGoal === "travel" || rawGoal === "emergency"
+        ? rawGoal
+        : undefined;
+
+  return {
+    ...seedState,
+    ...state,
+    onboarding: {
+      ...seedState.onboarding,
+      ...(state?.onboarding ?? {}),
+      goal: savedGoal ?? seedState.onboarding.goal,
+    },
+    modules: {
+      ...seedState.modules,
+      ...(state?.modules ?? {}),
+    },
+    savingsGoals,
+    savingsLog: normalizeSavingsLog(state, savingsGoals),
+    badges: Array.isArray(state?.badges) ? state.badges : seedState.badges,
+    paychecks: Array.isArray(state?.paychecks) ? state.paychecks : seedState.paychecks,
+    budget: Array.isArray(state?.budget) ? state.budget : seedState.budget,
+  };
+}
+
+function syncGoalCompletion(goal: SavingsGoal) {
+  // Leaves are awarded from completed goals, so completion state must stay in sync with the saved amount.
+  const completed = goal.currentAmount >= goal.targetAmount;
+  return {
+    ...goal,
+    currentAmount: Math.min(goal.currentAmount, goal.targetAmount),
+    completedAt: completed ? goal.completedAt ?? new Date().toISOString() : undefined,
+  };
+}
 
 export const useAppStore = create<Store>()(
   persist(
     (set) => ({
       ...seedState,
       completeOnboarding: (payload) => set(() => ({ onboarding: payload, hasOnboarded: true })),
-      addXp: (amount) =>
-        set((state) => {
-          const xp = state.xp + amount;
-          return { xp, inventory: ensureInventory(xp) };
-        }),
-      logSavings: (amount) => {
-        if (Number.isNaN(amount) || amount <= 0) return { ok: false, message: "Enter an amount above $0." };
+      addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
+      addSavingsGoal: (payload) =>
         set((state) => ({
-          savingsGoal: {
-            ...state.savingsGoal,
-            currentAmount: Math.min(state.savingsGoal.currentAmount + amount, state.savingsGoal.targetAmount),
-          },
-          savingsLog: [{ date: new Date().toISOString().slice(0, 10), amount }, ...state.savingsLog].slice(0, 20),
-          xp: state.xp + 12,
-          inventory: ensureInventory(state.xp + 12),
-        }));
-        return { ok: true, message: "Nice work. Your plant got a growth boost." };
-      },
-      updateSavingsGoal: (targetAmount, timelineWeeks, title) =>
-        set((state) => ({
-          savingsGoal: {
-            ...state.savingsGoal,
-            title,
-            targetAmount,
-            timelineWeeks,
-            currentAmount: Math.min(state.savingsGoal.currentAmount, targetAmount),
-          },
+          savingsGoals: [
+            ...state.savingsGoals,
+            {
+              id: createId("goal"),
+              createdAt: new Date().toISOString(),
+              title: payload.title.trim(),
+              targetAmount: Math.max(1, payload.targetAmount),
+              currentAmount: 0,
+              timelineWeeks: Math.max(1, payload.timelineWeeks),
+            },
+          ],
         })),
+      updateSavingsGoal: (goalId, payload) =>
+        set((state) => ({
+          savingsGoals: state.savingsGoals.map((goal) =>
+            goal.id === goalId
+              ? syncGoalCompletion({
+                  ...goal,
+                  title: payload.title.trim(),
+                  targetAmount: Math.max(1, payload.targetAmount),
+                  timelineWeeks: Math.max(1, payload.timelineWeeks),
+                  currentAmount: Math.min(goal.currentAmount, Math.max(1, payload.targetAmount)),
+                })
+              : goal,
+          ),
+        })),
+      removeSavingsGoal: (goalId) =>
+        set((state) => ({
+          savingsGoals: state.savingsGoals.filter((goal) => goal.id !== goalId),
+          savingsLog: state.savingsLog.filter((entry) => entry.goalId !== goalId),
+        })),
+      logSavings: (goalId, amount) => {
+        if (Number.isNaN(amount) || amount <= 0) return { ok: false, message: "Enter an amount above A$0." };
+
+        let message = "Deposit added to your savings goal.";
+
+        set((state) => {
+          const targetGoal = state.savingsGoals.find((goal) => goal.id === goalId);
+          if (!targetGoal) {
+            message = "Choose a savings goal first.";
+            return state;
+          }
+
+          const beforeComplete = Boolean(targetGoal.completedAt);
+
+          const savingsGoals = state.savingsGoals.map((goal) => {
+            if (goal.id !== goalId) return goal;
+
+            const updatedGoal = syncGoalCompletion({
+              ...goal,
+              currentAmount: goal.currentAmount + amount,
+            });
+
+            if (!beforeComplete && updatedGoal.completedAt) {
+              message = "Goal complete. A new leaf has been added to your Learning Tree.";
+            }
+
+            return updatedGoal;
+          });
+
+          return {
+            savingsGoals,
+            savingsLog: [
+              {
+                id: createId("log"),
+                goalId,
+                date: new Date().toISOString().slice(0, 10),
+                amount,
+              },
+              ...state.savingsLog,
+            ].slice(0, 40),
+            xp: state.xp + 12,
+          };
+        });
+
+        return { ok: true, message };
+      },
       setModuleProgress: (moduleId, highestStep, score) =>
         set((state) => ({
           modules: {
@@ -103,31 +234,40 @@ export const useAppStore = create<Store>()(
           const module = moduleMap[moduleId];
           const current = state.modules[moduleId] ?? { completed: false, highestStep: 0, score: 0 };
           const justCompleted = !current.completed;
-          const earnedXp = module ? module.xpBonus : 20;
-          const xp = state.xp + (justCompleted ? earnedXp : 0);
+          const earnedXp = justCompleted ? module?.xpBonus ?? 20 : 0;
+          const modulesState = {
+            ...state.modules,
+            [moduleId]: {
+              completed: true,
+              highestStep: completedSteps,
+              score: Math.max(score, current.score),
+              completedAt: new Date().toISOString(),
+            },
+          };
+          const completedCount = modules.filter((item) => modulesState[item.id]?.completed).length;
           const badges = [...state.badges];
 
-          if (justCompleted && !badges.find((b) => b.id === `module-${moduleId}`)) {
+          if (justCompleted && !badges.find((badge) => badge.id === `module-${moduleId}`)) {
             badges.push({
               id: `module-${moduleId}`,
-              label: "Module Complete",
-              description: `Finished ${module?.title ?? "a module"}.`,
+              label: "Branch Growth",
+              description: `Unlocked ${module?.branchLabel.toLowerCase() ?? "a new branch"} on your Learning Tree.`,
+            });
+          }
+
+          // The final canopy badge is derived from all learning modules, not XP or savings goals.
+          if (completedCount === modules.length && !badges.find((badge) => badge.id === "canopy-complete")) {
+            badges.push({
+              id: "canopy-complete",
+              label: "Canopy Complete",
+              description: "Finished every learning module and unlocked the full tree canopy.",
             });
           }
 
           return {
-            xp,
-            inventory: ensureInventory(xp),
+            xp: state.xp + earnedXp,
             badges,
-            modules: {
-              ...state.modules,
-              [moduleId]: {
-                completed: true,
-                highestStep: completedSteps,
-                score: Math.max(score, current.score),
-                completedAt: new Date().toISOString(),
-              },
-            },
+            modules: modulesState,
           };
         }),
       updateBudgetValue: (category, amount) =>
@@ -139,7 +279,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: "moneygarden-au-state",
-      version: 1,
+      version: 2,
       merge: (persistedState, currentState) => {
         const merged = {
           ...(currentState as Store),

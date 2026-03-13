@@ -78,7 +78,7 @@ export function ModulePlayerPage() {
           <Button onClick={() => setIndex((prev) => Math.min(module.steps.length - 1, prev + 1))}>Next Step</Button>
         ) : (
           <Button onClick={finishModule} className="inline-flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4" /> Finish + Claim Bonus XP
+            <CheckCircle2 className="h-4 w-4" /> Finish + Grow Branch
           </Button>
         )}
       </div>

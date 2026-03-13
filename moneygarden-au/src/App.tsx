@@ -1,10 +1,10 @@
-﻿import type { ReactElement } from "react";
+import type { ReactElement } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { useAppStore } from "./store/useAppStore";
 import { LandingPage } from "./pages/LandingPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
-import { GardenPage } from "./pages/GardenPage";
+import { TreePage } from "./pages/TreePage";
 import { LearnPage } from "./pages/LearnPage";
 import { ModulePlayerPage } from "./pages/ModulePlayerPage";
 import { BudgetPage } from "./pages/BudgetPage";
@@ -33,8 +33,9 @@ export default function App() {
           </Protected>
         }
       >
-        <Route index element={<Navigate to="garden" replace />} />
-        <Route path="garden" element={<GardenPage />} />
+        <Route index element={<Navigate to="tree" replace />} />
+        <Route path="tree" element={<TreePage />} />
+        <Route path="garden" element={<Navigate to="/app/tree" replace />} />
         <Route path="learn" element={<LearnPage />} />
         <Route path="learn/:moduleId" element={<ModulePlayerPage />} />
         <Route path="budget" element={<BudgetPage />} />

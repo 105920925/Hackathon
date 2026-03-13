@@ -1,10 +1,10 @@
-﻿export type Difficulty = "Beginner" | "Intermediate";
+export type Difficulty = "Beginner" | "Intermediate";
 
 export type ModuleFilter = "New" | "Popular" | "Quick 5-min";
 
 export type OnboardingData = {
   ageRange: "13-15" | "16-17" | "18-19";
-  goal: "car" | "phone" | "holiday" | "emergency";
+  goal: "car" | "phone" | "travel" | "emergency";
   incomeStyle: "casual-job" | "allowance" | "mixed";
   confidence: "just-starting" | "getting-there" | "pretty-confident";
 };
@@ -62,6 +62,7 @@ export type ModuleStep = QuizStep | SliderStep | ScenarioStep | MatchStep | Info
 
 export type LearningModule = {
   id: string;
+  moduleNumber: number;
   title: string;
   shortDescription: string;
   difficulty: Difficulty;
@@ -70,6 +71,7 @@ export type LearningModule = {
   themeColor: string;
   steps: ModuleStep[];
   xpBonus: number;
+  branchLabel: string;
 };
 
 export type ModuleProgress = {
@@ -80,10 +82,26 @@ export type ModuleProgress = {
 };
 
 export type SavingsGoal = {
+  id: string;
   targetAmount: number;
   currentAmount: number;
   timelineWeeks: number;
   title: string;
+  completedAt?: string;
+  createdAt: string;
+};
+
+export type SavingsGoalDraft = {
+  title: string;
+  targetAmount: number;
+  timelineWeeks: number;
+};
+
+export type SavingsLogEntry = {
+  id: string;
+  goalId: string;
+  date: string;
+  amount: number;
 };
 
 export type Paycheck = {
@@ -113,10 +131,9 @@ export type AppState = {
   xp: number;
   streak: number;
   modules: Record<string, ModuleProgress>;
-  savingsGoal: SavingsGoal;
-  savingsLog: Array<{ date: string; amount: number }>;
+  savingsGoals: SavingsGoal[];
+  savingsLog: SavingsLogEntry[];
   badges: Badge[];
-  inventory: string[];
   paychecks: Paycheck[];
   budget: BudgetCategory[];
   darkMode: boolean;

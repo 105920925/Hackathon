@@ -1,11 +1,11 @@
-﻿import { Home, BookOpen, Wallet, HandCoins, ReceiptText, UserCircle2, Sprout } from "lucide-react";
+import { BookOpen, GitBranch, HandCoins, ReceiptText, UserCircle2, Wallet } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { useAppStore } from "../../store/useAppStore";
 
 const navItems = [
-  { to: "/app/garden", label: "Garden", icon: Home },
+  { to: "/app/tree", label: "Learning Tree", icon: GitBranch },
   { to: "/app/learn", label: "Learn", icon: BookOpen },
   { to: "/app/budget", label: "Budget", icon: Wallet },
   { to: "/app/borrowing", label: "Borrowing", icon: HandCoins },
@@ -21,8 +21,8 @@ export function AppShell() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
-          <Link to="/app/garden" className="inline-flex items-center gap-2 text-lg font-semibold">
-            <Sprout className="h-5 w-5 text-emerald-500" /> MoneyGarden AU
+          <Link to="/app/tree" className="inline-flex items-center gap-2 text-lg font-semibold">
+            <GitBranch className="h-5 w-5 text-emerald-500" /> Learning Tree AU
           </Link>
           <Button variant="outline" size="sm" onClick={toggleDarkMode}>
             {darkMode ? "Light mode" : "Dark mode"}
