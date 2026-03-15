@@ -2,7 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { seedState } from "../data/seed";
 import { moduleMap, modules } from "../data/modules";
-import type { AppState, OnboardingData, SavingsGoal, SavingsGoalDraft, SavingsLogEntry, UserProfile } from "../types";
+import type {
+  AppState,
+  BudgetCategory,
+  OnboardingData,
+  SavingsGoal,
+  SavingsGoalDraft,
+  SavingsLogEntry,
+  UserProfile,
+} from "../types";
 
 type Store = AppState & {
   completeProfileSetup: (payload: UserProfile) => void;
@@ -14,7 +22,9 @@ type Store = AppState & {
   logSavings: (goalId: string, amount: number) => { ok: boolean; message: string };
   completeModule: (moduleId: string, score: number, completedSteps: number) => void;
   setModuleProgress: (moduleId: string, highestStep: number, score: number) => void;
-  updateBudgetValue: (category: string, amount: number) => void;
+  addBudgetCategory: (name: string) => { ok: boolean; message: string };
+  updateBudgetCategory: (categoryId: string, payload: Partial<Pick<BudgetCategory, "name" | "amount">>) => void;
+  removeBudgetCategory: (categoryId: string) => void;
   toggleDarkMode: () => void;
   resetProgress: () => void;
 };
@@ -93,6 +103,31 @@ function normalizeSavingsLog(state: LegacyState | undefined, savingsGoals: Savin
     .filter((entry) => entry.amount > 0);
 }
 
+function normalizeBudget(state?: LegacyState): BudgetCategory[] {
+  const fallbackBudget = seedState.budget;
+
+  if (!Array.isArray(state?.budget) || state.budget.length === 0) return fallbackBudget;
+
+  return state.budget
+    .map((item, index) => {
+      const fallback = fallbackBudget[index] ?? fallbackBudget[0];
+      const name =
+        typeof item?.name === "string" && item.name.trim()
+          ? item.name.trim()
+          : fallback?.name ?? `Category ${index + 1}`;
+
+      return {
+        id:
+          typeof item?.id === "string" && item.id.trim()
+            ? item.id
+            : createId("budget"),
+        name,
+        amount: Math.max(0, safeNumber(item?.amount, fallback?.amount ?? 0)),
+      };
+    })
+    .filter((item, index, array) => item.name && array.findIndex((entry) => entry.id === item.id) === index);
+}
+
 function normalizeState(state?: LegacyState): AppState {
   const savingsGoals = normalizeSavingsGoals(state);
   const rawGoal = (state?.onboarding as { goal?: string } | undefined)?.goal;
@@ -139,7 +174,7 @@ function normalizeState(state?: LegacyState): AppState {
     savingsLog: normalizeSavingsLog(state, savingsGoals),
     badges: Array.isArray(state?.badges) ? state.badges : seedState.badges,
     paychecks: Array.isArray(state?.paychecks) ? state.paychecks : seedState.paychecks,
-    budget: Array.isArray(state?.budget) ? state.budget : seedState.budget,
+    budget: normalizeBudget(state),
   };
 }
 
@@ -311,9 +346,53 @@ export const useAppStore = create<Store>()(
             modules: modulesState,
           };
         }),
-      updateBudgetValue: (category, amount) =>
+      addBudgetCategory: (name) => {
+        const trimmedName = name.trim();
+        if (!trimmedName) return { ok: false, message: "Enter a category name first." };
+
+        let message = "Budget category added.";
+
+        set((state) => {
+          if (state.budget.some((item) => item.name.toLowerCase() === trimmedName.toLowerCase())) {
+            message = "That category already exists.";
+            return state;
+          }
+
+          return {
+            budget: [
+              ...state.budget,
+              {
+                id: createId("budget"),
+                name: trimmedName,
+                amount: 0,
+              },
+            ],
+          };
+        });
+
+        return { ok: message === "Budget category added.", message };
+      },
+      updateBudgetCategory: (categoryId, payload) =>
         set((state) => ({
-          budget: state.budget.map((item) => (item.name === category ? { ...item, amount: Math.max(0, amount) } : item)),
+          budget: state.budget.map((item) => {
+            if (item.id !== categoryId) return item;
+
+            return {
+              ...item,
+              name:
+                typeof payload.name === "string" && payload.name.trim()
+                  ? payload.name.trim()
+                  : item.name,
+              amount:
+                typeof payload.amount === "number" && Number.isFinite(payload.amount)
+                  ? Math.max(0, payload.amount)
+                  : item.amount,
+            };
+          }),
+        })),
+      removeBudgetCategory: (categoryId) =>
+        set((state) => ({
+          budget: state.budget.filter((item) => item.id !== categoryId),
         })),
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
       resetProgress: () => set(() => ({ ...seedState, hasOnboarded: true })),

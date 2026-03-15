@@ -80,11 +80,11 @@ export const seedState: AppState = {
     },
   ],
   budget: [
-    { name: "Transport", amount: 35 },
-    { name: "Food", amount: 70 },
-    { name: "Subscriptions", amount: 18 },
-    { name: "Savings", amount: 90 },
-    { name: "Fun", amount: 55 },
+    { id: "budget-transport", name: "Transport", amount: 35 },
+    { id: "budget-food", name: "Food", amount: 70 },
+    { id: "budget-subscriptions", name: "Subscriptions", amount: 18 },
+    { id: "budget-savings", name: "Savings", amount: 90 },
+    { id: "budget-fun", name: "Fun", amount: 55 },
   ],
   darkMode: false,
 };

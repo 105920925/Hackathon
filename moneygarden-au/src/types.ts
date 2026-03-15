@@ -359,6 +359,7 @@ export type Paycheck = {
 };
 
 export type BudgetCategory = {
+  id: string;
   name: string;
   amount: number;
 };
