@@ -29,6 +29,13 @@ export const seedState: AppState = {
     "taxes-employment": { completed: false, score: 0, highestStep: 0 },
     "stock-market-basics": { completed: false, score: 0, highestStep: 0 },
     "wise-spending": { completed: false, score: 0, highestStep: 0 },
+    "budgeting-goal-planning": { completed: false, score: 0, highestStep: 0 },
+    "emergency-funds-money-safety": { completed: false, score: 0, highestStep: 0 },
+    "rent-bills-living-costs": { completed: false, score: 0, highestStep: 0 },
+    "consumer-rights-insurance": { completed: false, score: 0, highestStep: 0 },
+    "super-retirement-basics": { completed: false, score: 0, highestStep: 0 },
+    "side-hustles-income-growth": { completed: false, score: 0, highestStep: 0 },
+    "big-purchases-decision-making": { completed: false, score: 0, highestStep: 0 },
   },
   savingsGoals: [
     {

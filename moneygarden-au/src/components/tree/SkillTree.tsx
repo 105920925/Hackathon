@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Lock,
-  PlayCircle,
-  Sparkles,
-  Target,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Lock, PlayCircle } from "lucide-react";
 import type { LearningModule, ModuleProgress } from "../../types";
 import { ModuleIconGlyph } from "../modules/moduleIcons";
 import { cn } from "../../lib/utils";
@@ -20,39 +12,144 @@ type Props = {
   subtitle?: string;
 };
 
-type NodePosition = {
+type SkillState = {
+  module: LearningModule;
+  completed: boolean;
+  available: boolean;
+  locked: boolean;
+  inProgress: boolean;
+  completion: number;
+};
+
+type NodePoint = {
   x: number;
   y: number;
 };
 
-function getNodePositions(count: number): NodePosition[] {
-  if (count <= 1) return [{ x: 50, y: 34 }];
+const treeRows = [
+  { y: 84, indexes: [0], minX: 50, maxX: 50 },
+  { y: 68, indexes: [1, 2], minX: 40, maxX: 60 },
+  { y: 52, indexes: [3, 4, 5], minX: 30, maxX: 70 },
+  { y: 36, indexes: [6, 7, 8], minX: 30, maxX: 70 },
+  { y: 20, indexes: [9, 10, 11], minX: 30, maxX: 70 },
+] as const;
 
-  return Array.from({ length: count }, (_, index) => {
-    const progress = index / (count - 1);
-    const arc = Math.sin(progress * Math.PI);
+function buildTreePositions(): NodePoint[] {
+  const positions: NodePoint[] = [];
+
+  treeRows.forEach(({ y, indexes, minX, maxX }) => {
+    if (indexes.length === 1) {
+      positions[indexes[0]] = { x: minX, y };
+      return;
+    }
+
+    const step = (maxX - minX) / (indexes.length - 1);
+
+    indexes.forEach((index, offset) => {
+      positions[index] = {
+        x: Number((minX + step * offset).toFixed(2)),
+        y,
+      };
+    });
+  });
+
+  return positions;
+}
+
+const treePositions = buildTreePositions();
+
+const nodeDisplayTitles = [
+  "Fundamentals",
+  "Borrowing Basics",
+  "Work & Tax",
+  "Investing Intro",
+  "Smart Spending",
+  "Budget Planning",
+  "Money Safety",
+  "Living Costs",
+  "Consumer Rights",
+  "Super Basics",
+  "Income Growth",
+  "Big Decisions",
+];
+
+const connectors: Array<[number, number]> = [
+  [0, 1],
+  [0, 2],
+  [1, 3],
+  [1, 4],
+  [2, 4],
+  [2, 5],
+  [3, 6],
+  [4, 7],
+  [5, 8],
+  [6, 9],
+  [7, 10],
+  [8, 11],
+];
+
+function getStates(
+  modules: LearningModule[],
+  moduleState: Record<string, ModuleProgress>,
+): SkillState[] {
+  return modules.map((module, index) => {
+    const completed = Boolean(moduleState[module.id]?.completed);
+    const parentIndexes = connectors
+      .filter(([, to]) => to === index)
+      .map(([from]) => from);
+    const unlocked =
+      parentIndexes.length === 0 ||
+      parentIndexes.every((parentIndex) => Boolean(moduleState[modules[parentIndex]?.id]?.completed));
+    const highestStep = moduleState[module.id]?.highestStep ?? 0;
+    const inProgress = unlocked && !completed && highestStep > 0;
+    const available = unlocked && !completed && highestStep === 0;
+    const locked = !completed && !unlocked;
+    const completion =
+      module.steps.length === 0 ? 0 : Math.round((highestStep / module.steps.length) * 100);
 
     return {
-      x: 14 + progress * 72,
-      y: 72 - arc * 40,
+      module,
+      completed,
+      available,
+      locked,
+      inProgress,
+      completion,
     };
   });
 }
 
+function nodeSurfaceStyles(state: SkillState) {
+  if (state.completed) {
+    return "bg-emerald-400 shadow-[0_0_0_6px_rgba(74,222,128,0.08)]";
+  }
+  if (state.inProgress) {
+    return "bg-amber-300 shadow-[0_0_0_6px_rgba(253,224,71,0.08)]";
+  }
+  if (state.available) {
+    return "bg-teal-300 shadow-[0_0_0_6px_rgba(94,234,212,0.08)]";
+  }
+  return "bg-slate-800/90";
+}
+
+function nodeStyles(state: SkillState) {
+  if (state.completed) {
+    return "border-emerald-200 text-emerald-950";
+  }
+  if (state.inProgress) {
+    return "border-amber-200 text-amber-950";
+  }
+  if (state.available) {
+    return "border-teal-200 text-teal-950";
+  }
+  return "border-slate-600 text-slate-300";
+}
+
 export function SkillTree({ modules, moduleState, title, subtitle }: Props) {
-  const states = modules.map((module, index) => {
-    const completed = Boolean(moduleState[module.id]?.completed);
-    const previousComplete =
-      index === 0 ? true : Boolean(moduleState[modules[index - 1].id]?.completed);
-    const highestStep = moduleState[module.id]?.highestStep ?? 0;
-    const available = !completed && previousComplete;
-    const locked = !completed && !previousComplete;
-    const inProgress = !completed && highestStep > 0;
-
-    return { module, completed, available, locked, inProgress, highestStep };
-  });
-
-  const positions = getNodePositions(modules.length);
+  const states = getStates(modules, moduleState);
+  const points = treePositions.slice(0, states.length);
+  const visibleConnectors = connectors.filter(
+    ([from, to]) => from < states.length && to < states.length,
+  );
   const defaultSelectedId =
     states.find((item) => item.available || item.inProgress)?.module.id ??
     states.find((item) => item.completed)?.module.id ??
@@ -66,397 +163,236 @@ export function SkillTree({ modules, moduleState, title, subtitle }: Props) {
     }
   }, [defaultSelectedId, selectedId, states]);
 
-  const selectedState = states.find((item) => item.module.id === selectedId) ?? states[0];
+  const selectedIndex = states.findIndex((item) => item.module.id === selectedId);
+  const selectedState = selectedIndex >= 0 ? states[selectedIndex] : states[0];
   const completedCount = states.filter((item) => item.completed).length;
-  const nextAvailable = states.find((item) => item.available || item.inProgress);
-  const progressPercent =
-    modules.length === 0 ? 0 : Math.round((completedCount / modules.length) * 100);
+  const childIndexes = connectors
+    .filter(([from]) => from === selectedIndex)
+    .map(([, to]) => to)
+    .filter((index) => index < states.length);
+  const unlocksLabel =
+    childIndexes.length === 0
+      ? "Canopy complete"
+      : childIndexes
+          .map((index) => nodeDisplayTitles[index] ?? `Module ${index + 1}`)
+          .join(", ");
 
   return (
-    <div className="rounded-[34px] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.16),transparent_24%),radial-gradient(circle_at_85%_18%,rgba(56,189,248,0.16),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(242,248,255,0.94))] p-5 shadow-[0_30px_90px_-54px_rgba(14,116,144,0.55)] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.2),transparent_24%),radial-gradient(circle_at_85%_18%,rgba(56,189,248,0.18),transparent_24%),linear-gradient(180deg,rgba(7,17,29,0.98),rgba(12,20,34,0.96))]">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight">
-            {title ?? "Finance Skill Tree"}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            {subtitle ??
-              "Unlock each knowledge branch in order. Completed modules glow, the next module is spotlighted, and every node now has a guided detail view."}
-          </p>
-        </div>
-        <div className="rounded-full bg-background/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {completedCount} / {modules.length} skills unlocked
-        </div>
+    <section className="rounded-[30px] border border-border/80 bg-background/95 p-5 shadow-sm">
+      <div className="mb-5">
+        <h2 className="text-2xl font-bold tracking-tight">
+          {title ?? "Learning Tree"}
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          {subtitle ??
+            "Begin at Fundamentals. Each completed lesson unlocks the next branch in your learning tree."}
+        </p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="relative overflow-hidden rounded-[30px] border border-border/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.45),rgba(219,234,254,0.12))] p-4 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.55),rgba(30,41,59,0.18))]">
-          <div className="pointer-events-none absolute inset-x-10 top-6 h-24 rounded-full bg-emerald-300/10 blur-3xl" />
+      <div className="rounded-[28px] border border-emerald-950/20 bg-[linear-gradient(180deg,#0a1720,#0b1828)] p-5 text-slate-100">
+        <div className="mb-4 hidden items-center justify-between gap-3 lg:flex">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/55">
+            Learning path
+          </p>
+          <p className="text-xs text-slate-400">
+            Follow the connected modules from bottom to top
+          </p>
+        </div>
 
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/50 bg-white/70 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Branch progress
-              </p>
-              <p className="mt-1 text-sm font-semibold">
-                {completedCount === modules.length
-                  ? "Full canopy unlocked"
-                  : nextAvailable
-                    ? `Next branch: ${nextAvailable.module.title}`
-                    : "Choose a branch to inspect"}
-              </p>
-            </div>
-            <div className="min-w-[170px]">
-              <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                <span>Completion</span>
-                <span>{progressPercent}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-sky-100 dark:bg-sky-950/60">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-sky-400 transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="relative hidden h-[520px] lg:block">
-            <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
-              <defs>
-                <linearGradient id="skill-line" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#22c55e" />
-                  <stop offset="100%" stopColor="#38bdf8" />
-                </linearGradient>
-                <linearGradient id="skill-trunk" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#b45309" />
-                  <stop offset="100%" stopColor="#78350f" />
-                </linearGradient>
-              </defs>
-
-              <ellipse cx="50" cy="92" rx="24" ry="4" fill="rgba(52,211,153,0.18)" />
-              <path
-                d="M50 88 C49 78 49 68 50 58"
-                fill="none"
-                stroke="url(#skill-trunk)"
-                strokeWidth="3.4"
-                strokeLinecap="round"
-                opacity="0.8"
-              />
-
-              {positions.map((position, index) => {
-                const trunkJoinY = 58 - Math.max(0, (position.y - 22) * 0.18);
-
-                return (
-                  <path
-                    key={`trunk-${modules[index]?.id ?? index}`}
-                    d={`M 50 58 C 50 ${trunkJoinY}, ${position.x - (position.x - 50) * 0.35} ${position.y + 6}, ${position.x} ${position.y}`}
-                    fill="none"
-                    stroke="rgba(120,53,15,0.38)"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                  />
-                );
-              })}
-
-              {positions.slice(0, -1).map((node, index) => {
-                const next = positions[index + 1];
-                const complete = states[index].completed;
-                const activePath =
-                  selectedState &&
-                  (selectedState.module.id === states[index].module.id ||
-                    selectedState.module.id === states[index + 1].module.id);
-
-                return (
-                  <path
-                    key={`${node.x}-${node.y}`}
-                    d={`M ${node.x} ${node.y} C ${node.x + 8} ${node.y - 18}, ${next.x - 8} ${next.y + 18}, ${next.x} ${next.y}`}
-                    fill="none"
-                    stroke="url(#skill-line)"
-                    strokeWidth={activePath ? "2.2" : "1.6"}
-                    strokeDasharray={complete ? "0" : "5 4"}
-                    opacity={complete ? 0.92 : activePath ? 0.6 : 0.28}
-                  />
-                );
-              })}
-            </svg>
-
-            {states.map((item, index) => {
-              const position = positions[index];
-              const selected = item.module.id === selectedState?.module.id;
-              const completion =
-                item.module.steps.length === 0
-                  ? 0
-                  : Math.round((item.highestStep / item.module.steps.length) * 100);
+        <div className="relative hidden h-[560px] overflow-hidden rounded-[22px] lg:block">
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="absolute inset-0 h-full w-full"
+          >
+            {visibleConnectors.map(([from, to], index) => {
+              const a = points[from];
+              const b = points[to];
+              const active =
+                states[from]?.completed ||
+                states[to]?.completed ||
+                states[to]?.available ||
+                states[to]?.inProgress;
 
               return (
-                <motion.div
-                  key={item.module.id}
-                  className="absolute"
-                  style={{
-                    left: `${position.x}%`,
-                    top: `${position.y}%`,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.08 }}
-                >
+                <path
+                  key={index}
+                  d={`M ${a.x} ${a.y} L ${b.x} ${b.y}`}
+                  fill="none"
+                  stroke={active ? "rgba(209,250,229,0.78)" : "rgba(148,163,184,0.16)"}
+                  strokeWidth={active ? "1.05" : "0.75"}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+          </svg>
+
+          {states.map((item, index) => {
+            const point = points[index];
+            const selected = item.module.id === selectedState?.module.id;
+            const displayTitle = nodeDisplayTitles[index] ?? item.module.title;
+
+            return (
+              <div
+                key={item.module.id}
+                className="absolute"
+                style={{ left: `${point.x}%`, top: `${point.y}%` }}
+              >
+                <div className="relative h-12 w-12 -translate-x-1/2 -translate-y-1/2">
+                  <div
+                    className={cn(
+                      "pointer-events-none absolute inset-0 rounded-full",
+                      nodeSurfaceStyles(item),
+                    )}
+                  />
                   <button
                     type="button"
                     onClick={() => setSelectedId(item.module.id)}
                     className={cn(
-                      "group w-[220px] rounded-[28px] border p-4 text-left backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400",
-                      selected && "scale-[1.03]",
-                      item.completed &&
-                        "border-emerald-300 bg-emerald-50/90 shadow-[0_0_0_1px_rgba(16,185,129,0.15),0_24px_70px_-42px_rgba(16,185,129,0.75)] dark:border-emerald-900 dark:bg-emerald-950/30",
-                      item.available &&
-                        "border-sky-300 bg-sky-50/90 shadow-[0_0_0_1px_rgba(56,189,248,0.15),0_24px_70px_-42px_rgba(56,189,248,0.75)] dark:border-sky-900 dark:bg-sky-950/25",
-                      item.inProgress && "ring-1 ring-amber-300 dark:ring-amber-800",
-                      item.locked &&
-                        "border-border/70 bg-zinc-100/70 opacity-80 dark:bg-zinc-900/60",
-                      selected &&
-                        "shadow-[0_0_0_1px_rgba(125,211,252,0.35),0_30px_80px_-46px_rgba(56,189,248,0.7)]",
+                      "absolute inset-0 z-20 flex items-center justify-center rounded-full border-2 bg-transparent transition",
+                      nodeStyles(item),
+                      selected && "scale-110 ring-4 ring-emerald-100/15",
                     )}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div
-                        className={cn(
-                          "inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg",
-                          item.module.themeColor,
-                          item.locked && "grayscale",
-                        )}
-                      >
-                        <ModuleIconGlyph icon={item.module.icon} className="h-6 w-6" />
-                      </div>
-                      <div className="rounded-full bg-background/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Module {item.module.moduleNumber}
-                      </div>
-                    </div>
-                    <p className="mt-4 text-lg font-bold">{item.module.title}</p>
-                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                      {item.module.shortDescription}
-                    </p>
-                    <div className="mt-4 flex items-center justify-between text-xs font-semibold">
-                      <span
-                        className={cn(
-                          item.completed && "text-emerald-700 dark:text-emerald-300",
-                          item.available && "text-sky-700 dark:text-sky-300",
-                          item.locked && "text-muted-foreground",
-                        )}
-                      >
-                        {item.completed
-                          ? "Completed"
-                          : item.locked
-                            ? "Locked"
-                            : item.inProgress
-                              ? "In progress"
-                              : "Ready to unlock"}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-muted-foreground">
-                        {item.completed ? (
-                          <CheckCircle2 className="h-4 w-4" />
-                        ) : item.locked ? (
-                          <Lock className="h-4 w-4" />
-                        ) : (
-                          <PlayCircle className="h-4 w-4" />
-                        )}
-                      </span>
-                    </div>
-                    <div className="mt-3">
-                      <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        <span>Progress</span>
-                        <span>{item.completed ? "100%" : `${completion}%`}</span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-white/70 dark:bg-zinc-800/80">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all duration-500",
-                            item.completed
-                              ? "bg-gradient-to-r from-emerald-400 to-teal-400"
-                              : item.inProgress
-                                ? "bg-gradient-to-r from-amber-400 to-orange-400"
-                                : item.available
-                                  ? "bg-gradient-to-r from-sky-400 to-cyan-400"
-                                  : "bg-white/20",
-                          )}
-                          style={{ width: `${item.completed ? 100 : completion}%` }}
-                        />
-                      </div>
-                    </div>
+                    {item.completed ? (
+                      <CheckCircle2 className="h-4.5 w-4.5" />
+                    ) : item.locked ? (
+                      <Lock className="h-3.5 w-3.5" />
+                    ) : (
+                      <ModuleIconGlyph icon={item.module.icon} className="h-4 w-4" />
+                    )}
                   </button>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-3 lg:hidden">
-            {states.map((item) => {
-              const completion =
-                item.module.steps.length === 0
-                  ? 0
-                  : Math.round((item.highestStep / item.module.steps.length) * 100);
-
-              return (
-                <button
-                  key={item.module.id}
-                  type="button"
-                  onClick={() => setSelectedId(item.module.id)}
-                  className={cn(
-                    "rounded-[26px] border p-4 text-left",
-                    item.completed &&
-                      "border-emerald-300 bg-emerald-50/90 dark:border-emerald-900 dark:bg-emerald-950/30",
-                    item.available &&
-                      "border-sky-300 bg-sky-50/90 dark:border-sky-900 dark:bg-sky-950/25",
-                    item.locked && "border-border/70 bg-muted/40 opacity-80",
-                    item.module.id === selectedState?.module.id &&
-                      "ring-2 ring-sky-300 dark:ring-sky-800",
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        "inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br text-white",
-                        item.module.themeColor,
-                        item.locked && "grayscale",
-                      )}
-                    >
-                      <ModuleIconGlyph icon={item.module.icon} className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold">{item.module.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.completed
-                          ? "Completed"
-                          : item.locked
-                            ? "Locked"
-                            : item.inProgress
-                              ? "In progress"
-                              : "Available"}
-                      </p>
-                    </div>
-                    <div className="text-xs font-semibold text-muted-foreground">
-                      {item.completed ? "100%" : `${completion}%`}
-                    </div>
+                  <div className="pointer-events-none absolute left-1/2 top-[calc(100%+10px)] z-20 w-28 -translate-x-1/2 text-center">
+                    <p className="text-sm font-semibold leading-tight text-slate-100">{displayTitle}</p>
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="rounded-[30px] border border-white/60 bg-white/75 p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950/70">
-          {selectedState ? (
-            <>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Selected branch
-                  </div>
-                  <h3 className="mt-3 text-2xl font-black tracking-tight">
-                    {selectedState.module.title}
-                  </h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {selectedState.module.shortDescription}
-                  </p>
-                </div>
+        <div className="grid gap-3 lg:hidden">
+          {states.map((item, index) => {
+            const displayTitle = nodeDisplayTitles[index] ?? item.module.title;
+            const statusLabel = item.completed
+              ? "Completed"
+              : item.locked
+                ? "Locked"
+                : item.inProgress
+                  ? "In progress"
+                  : "Unlocked";
+
+            return (
+              <button
+                key={item.module.id}
+                type="button"
+                onClick={() => setSelectedId(item.module.id)}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border p-3 text-left transition",
+                  item.module.id === selectedState?.module.id
+                    ? "border-sky-300 bg-sky-50 dark:border-sky-800 dark:bg-sky-950/20"
+                    : "border-border bg-background",
+                )}
+              >
                 <div
                   className={cn(
-                    "inline-flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-br text-white shadow-lg",
-                    selectedState.module.themeColor,
-                    selectedState.locked && "grayscale",
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border",
+                    nodeStyles(item),
                   )}
                 >
-                  <ModuleIconGlyph icon={selectedState.module.icon} className="h-7 w-7" />
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    <Target className="h-4 w-4" />
-                    Module snapshot
-                  </div>
-                  <p className="mt-3 text-sm">
-                    <span className="font-semibold">Difficulty:</span>{" "}
-                    {selectedState.module.difficulty}
-                  </p>
-                  <p className="mt-2 text-sm">
-                    <span className="font-semibold">Length:</span>{" "}
-                    {selectedState.module.minutes} min
-                  </p>
-                  <p className="mt-2 text-sm">
-                    <span className="font-semibold">XP reward:</span>{" "}
-                    {selectedState.module.xpBonus}
-                  </p>
-                  <p className="mt-2 text-sm">
-                    <span className="font-semibold">Unlock:</span>{" "}
-                    {selectedState.module.branchLabel}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    <Sparkles className="h-4 w-4" />
-                    Status
-                  </div>
-                  <p className="mt-3 text-sm font-semibold">
-                    {selectedState.completed
-                      ? "This branch is complete."
-                      : selectedState.locked
-                        ? "This branch is locked until the previous module is completed."
-                        : selectedState.inProgress
-                          ? "This branch is active and already underway."
-                          : "This branch is ready to start now."}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {selectedState.completed
-                      ? "Nice work. You can reopen it any time for a refresh."
-                      : selectedState.locked
-                        ? "Follow the tree path from left to right to unlock it."
-                        : "Open the module to keep extending your finance tree."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  to={selectedState.locked ? "#" : `/app/learn/${selectedState.module.id}`}
-                  onClick={(event) => {
-                    if (selectedState.locked) event.preventDefault();
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition",
-                    selectedState.locked
-                      ? "cursor-not-allowed bg-muted text-muted-foreground"
-                      : "bg-emerald-500 text-white hover:bg-emerald-600",
+                  {item.completed ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : item.locked ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <ModuleIconGlyph icon={item.module.icon} className="h-5 w-5" />
                   )}
-                >
-                  {selectedState.completed
-                    ? "Review module"
-                    : selectedState.inProgress
-                      ? "Continue module"
-                      : "Start module"}
-                  {!selectedState.locked && <ArrowRight className="h-4 w-4" />}
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (nextAvailable) setSelectedId(nextAvailable.module.id);
-                  }}
-                  disabled={!nextAvailable}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Jump to next branch
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">No modules are available yet.</p>
-          )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{displayTitle}</p>
+                  <p className="text-xs text-muted-foreground">{statusLabel}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {selectedState && (
+        <div className="mt-5 rounded-[24px] border border-border bg-background p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {nodeDisplayTitles[selectedIndex] ?? `Module ${selectedState.module.moduleNumber}`}
+              </p>
+              <h3 className="mt-2 text-2xl font-bold tracking-tight">
+                {selectedState.module.title}
+              </h3>
+            </div>
+
+            <div className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+              {selectedState.completed
+                ? "Completed"
+                : selectedState.locked
+                  ? "Locked"
+                  : selectedState.inProgress
+                    ? "In progress"
+                    : "Ready to start"}
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {selectedState.module.shortDescription}
+          </p>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <InfoCard label="Difficulty" value={selectedState.module.difficulty} />
+            <InfoCard label="Length" value={`${selectedState.module.minutes} min`} />
+            <InfoCard
+              label="Unlocks"
+              value={unlocksLabel}
+            />
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              to={selectedState.locked ? "#" : `/app/learn/${selectedState.module.id}`}
+              onClick={(event) => {
+                if (selectedState.locked) event.preventDefault();
+              }}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition",
+                selectedState.locked
+                  ? "cursor-not-allowed bg-muted text-muted-foreground"
+                  : "bg-emerald-500 text-white hover:bg-emerald-600",
+              )}
+            >
+              {selectedState.completed
+                ? "Review module"
+                : selectedState.inProgress
+                  ? "Continue module"
+                  : "Start module"}
+              {!selectedState.locked && <ArrowRight className="h-4 w-4" />}
+            </Link>
+
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-border px-4 py-3 text-sm text-muted-foreground">
+              {selectedState.completed ? <CheckCircle2 className="h-4 w-4" /> : selectedState.locked ? <Lock className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+              {completedCount} branches grown
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-muted/20 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 font-semibold">{value}</p>
     </div>
   );
 }
