@@ -5,6 +5,7 @@ import { moduleMap, modules } from "../data/modules";
 import type {
   AppState,
   BudgetCategory,
+  ModuleProgress,
   OnboardingData,
   SavingsGoal,
   SavingsGoalDraft,
@@ -44,6 +45,55 @@ const safeNumber = (value: unknown, fallback: number) =>
 
 const createId = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
+const initialOnboarding: OnboardingData = {
+  ageRange: "16-17",
+  goal: "car",
+  incomeStyle: "casual-job",
+  confidence: "just-starting",
+};
+
+const initialProfile: UserProfile = {
+  firstName: "",
+  preferredName: "",
+  dateOfBirth: "",
+  stateOrTerritory: "NSW",
+  ageRange: initialOnboarding.ageRange,
+  schoolYear: "Year 11-12",
+  goal: initialOnboarding.goal,
+  incomeStyle: initialOnboarding.incomeStyle,
+  confidence: initialOnboarding.confidence,
+};
+
+function createFreshModuleState(): Record<string, ModuleProgress> {
+  return Object.fromEntries(
+    modules.map((module) => [
+      module.id,
+      {
+        completed: false,
+        score: 0,
+        highestStep: 0,
+      },
+    ]),
+  ) as Record<string, ModuleProgress>;
+}
+
+function createFreshAppState(darkMode = seedState.darkMode): AppState {
+  return {
+    hasOnboarded: false,
+    onboarding: initialOnboarding,
+    profile: initialProfile,
+    xp: 0,
+    streak: 0,
+    modules: createFreshModuleState(),
+    savingsGoals: [],
+    savingsLog: [],
+    badges: [],
+    paychecks: seedState.paychecks,
+    budget: [],
+    darkMode,
+  };
+}
+
 function normalizeGoal(goal: Partial<SavingsGoal>, fallback: SavingsGoal): SavingsGoal {
   const currentAmount = safeNumber(goal.currentAmount, fallback.currentAmount);
   const targetAmount = Math.max(1, safeNumber(goal.targetAmount, fallback.targetAmount));
@@ -67,7 +117,7 @@ function normalizeGoal(goal: Partial<SavingsGoal>, fallback: SavingsGoal): Savin
 function normalizeSavingsGoals(state?: LegacyState) {
   const fallbackGoals = seedState.savingsGoals;
 
-  if (Array.isArray(state?.savingsGoals) && state.savingsGoals.length > 0) {
+  if (Array.isArray(state?.savingsGoals)) {
     return state.savingsGoals.map((goal, index) => normalizeGoal(goal, fallbackGoals[index] ?? fallbackGoals[0]));
   }
 
@@ -106,7 +156,7 @@ function normalizeSavingsLog(state: LegacyState | undefined, savingsGoals: Savin
 function normalizeBudget(state?: LegacyState): BudgetCategory[] {
   const fallbackBudget = seedState.budget;
 
-  if (!Array.isArray(state?.budget) || state.budget.length === 0) return fallbackBudget;
+  if (!Array.isArray(state?.budget)) return fallbackBudget;
 
   return state.budget
     .map((item, index) => {
@@ -191,7 +241,7 @@ function syncGoalCompletion(goal: SavingsGoal) {
 export const useAppStore = create<Store>()(
   persist(
     (set) => ({
-      ...seedState,
+      ...createFreshAppState(seedState.darkMode),
       completeProfileSetup: (payload) =>
         set(() => ({
           profile: payload,
@@ -395,11 +445,26 @@ export const useAppStore = create<Store>()(
           budget: state.budget.filter((item) => item.id !== categoryId),
         })),
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
-      resetProgress: () => set(() => ({ ...seedState, hasOnboarded: true })),
+      resetProgress: () =>
+        set((state) => ({
+          ...createFreshAppState(state.darkMode),
+        })),
     }),
     {
       name: "moneygarden-au-state",
-      version: 2,
+      version: 3,
+      migrate: (persistedState, version) => {
+        if (version < 3) {
+          const savedDarkMode =
+            typeof (persistedState as Partial<Store> | undefined)?.darkMode === "boolean"
+              ? (persistedState as Partial<Store>).darkMode
+              : seedState.darkMode;
+
+          return createFreshAppState(savedDarkMode);
+        }
+
+        return persistedState as Store;
+      },
       merge: (persistedState, currentState) => {
         const merged = {
           ...(currentState as Store),

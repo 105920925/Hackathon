@@ -51,9 +51,14 @@ export function BorrowingPage() {
         <CardHeader>
           <CardTitle>Borrowing glossary</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <CardContent className="grid auto-rows-fr gap-3 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
           {Object.entries(glossary).map(([term, explanation]) => (
-            <details key={term} className="rounded-2xl border border-border bg-background/80 p-3">
+            <details
+              key={term}
+              className={`h-full rounded-2xl border border-border bg-background/80 p-3 [&_summary::-webkit-details-marker]:hidden ${
+                term === "BNPL" ? "xl:translate-y-3" : ""
+              }`}
+            >
               <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
                 <HelpCircle className="h-4 w-4 text-sky-500" />
                 {term}
