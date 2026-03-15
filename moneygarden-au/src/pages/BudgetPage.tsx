@@ -33,9 +33,9 @@ export function BudgetPage() {
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-muted-foreground">$</span>
                   <input
-                    value={item.amount}
+                    value={item.amount === 0 ? "" : item.amount}
                     type="number"
-                    onChange={(event) => updateBudgetValue(item.name, Number(event.target.value))}
+                    onChange={(event) => updateBudgetValue(item.name, event.target.value === "" ? 0 : Number(event.target.value))}
                     className="h-10 w-full rounded-xl border border-border bg-background pl-7 pr-3"
                   />
                 </div>

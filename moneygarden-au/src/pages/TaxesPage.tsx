@@ -6,10 +6,10 @@ import { formatAUD } from "../lib/utils";
 
 export function TaxesPage() {
   const paychecks = useAppStore((state) => state.paychecks);
-  const [weeklyHours, setWeeklyHours] = useState(14);
-  const [hourlyRate, setHourlyRate] = useState(24);
+  const [weeklyHours, setWeeklyHours] = useState("14");
+  const [hourlyRate, setHourlyRate] = useState("24");
 
-  const annualGross = weeklyHours * hourlyRate * 52;
+  const annualGross = Number(weeklyHours || 0) * Number(hourlyRate || 0) * 52;
   const estimatedTax = useMemo(() => estimateTeenTaxAnnual(annualGross), [annualGross]);
 
   const selectedPay = paychecks[0];
@@ -52,11 +52,11 @@ export function TaxesPage() {
           <div className="space-y-3">
             <label className="block text-sm">
               Weekly hours
-              <input type="number" value={weeklyHours} onChange={(e) => setWeeklyHours(Number(e.target.value))} className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-3" />
+              <input type="number" value={weeklyHours} onChange={(e) => setWeeklyHours(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-3" />
             </label>
             <label className="block text-sm">
               Hourly rate (AUD)
-              <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-3" />
+              <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-border bg-background px-3" />
             </label>
             <p className="text-xs text-muted-foreground">Penalty rates, offsets, HELP debt, and Medicare levy details are not fully modeled here.</p>
           </div>

@@ -18,8 +18,8 @@ export function SavingsGoalCard({ goal, onDeposit, onSave, onRemove }: Props) {
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(goal.title);
-  const [targetAmount, setTargetAmount] = useState(goal.targetAmount);
-  const [timelineWeeks, setTimelineWeeks] = useState(goal.timelineWeeks);
+  const [targetAmount, setTargetAmount] = useState(String(goal.targetAmount));
+  const [timelineWeeks, setTimelineWeeks] = useState(String(goal.timelineWeeks));
 
   const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
   const weeklyTarget = useMemo(
@@ -34,8 +34,10 @@ export function SavingsGoalCard({ goal, onDeposit, onSave, onRemove }: Props) {
   };
 
   const save = () => {
-    if (!title.trim() || targetAmount <= 0 || timelineWeeks <= 0) return;
-    onSave(goal.id, { title: title.trim(), targetAmount, timelineWeeks });
+    const parsedTargetAmount = Number(targetAmount);
+    const parsedTimelineWeeks = Number(timelineWeeks);
+    if (!title.trim() || parsedTargetAmount <= 0 || parsedTimelineWeeks <= 0) return;
+    onSave(goal.id, { title: title.trim(), targetAmount: parsedTargetAmount, timelineWeeks: parsedTimelineWeeks });
     setEditing(false);
   };
 
@@ -107,13 +109,13 @@ export function SavingsGoalCard({ goal, onDeposit, onSave, onRemove }: Props) {
               <input
                 type="number"
                 value={targetAmount}
-                onChange={(event) => setTargetAmount(Number(event.target.value))}
+                onChange={(event) => setTargetAmount(event.target.value)}
                 className="h-10 rounded-xl border border-border bg-background px-3 text-sm"
               />
               <input
                 type="number"
                 value={timelineWeeks}
-                onChange={(event) => setTimelineWeeks(Number(event.target.value))}
+                onChange={(event) => setTimelineWeeks(event.target.value)}
                 className="h-10 rounded-xl border border-border bg-background px-3 text-sm"
               />
             </div>

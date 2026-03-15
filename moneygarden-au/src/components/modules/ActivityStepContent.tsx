@@ -414,15 +414,16 @@ function MarketStudio({
   onStatusChange: (status: Status) => void;
 }) {
   const [companyId, setCompanyId] = useState(step.data.companies[0]?.id ?? "");
-  const [shares, setShares] = useState(5);
+  const [shares, setShares] = useState("5");
   const [eventIndex, setEventIndex] = useState(0);
   const [timelineIndex, setTimelineIndex] = useState(0);
   const [range, setRange] = useState<"1D" | "1W" | "1M" | "1Y">("1M");
 
   const company = step.data.companies.find((item) => item.id === companyId) ?? step.data.companies[0];
   const activeEvent = company.events[eventIndex];
-  const costBase = shares * company.purchasePrice;
-  const currentValue = shares * activeEvent.price;
+  const shareCount = Math.max(1, Number(shares) || 0);
+  const costBase = shareCount * company.purchasePrice;
+  const currentValue = shareCount * activeEvent.price;
   const gain = currentValue - costBase;
   const gainPct = costBase === 0 ? 0 : (gain / costBase) * 100;
   const chartData = useMemo(() => buildMarketSeries(company.events, range), [company.events, range]);
@@ -504,7 +505,7 @@ function MarketStudio({
                   min="1"
                   max="25"
                   value={shares}
-                  onChange={(event) => setShares(Math.max(1, Number(event.target.value) || 1))}
+                  onChange={(event) => setShares(event.target.value)}
                   className="w-28 rounded-2xl border border-border bg-background/80 px-4 py-2 outline-none"
                 />
               </label>
@@ -558,12 +559,12 @@ function MarketStudio({
                 Why the price changed: {activeEvent.reason}
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <MetricCard label="Holdings" value={`${shares} shares`} />
+                <MetricCard label="Holdings" value={`${shareCount} shares`} />
                 <MetricCard label="Average buy price" value={currency.format(company.purchasePrice)} />
                 <MetricCard label="Portfolio value" value={currency.format(currentValue)} />
               </div>
               <div className="mt-4 rounded-2xl border border-border bg-background/70 p-4 text-sm text-muted-foreground">
-                Transaction summary: Bought {shares} simulated shares of {company.id.toUpperCase()} at {currency.format(company.purchasePrice)} each. This is educational only, not real investing advice.
+                Transaction summary: Bought {shareCount} simulated shares of {company.id.toUpperCase()} at {currency.format(company.purchasePrice)} each. This is educational only, not real investing advice.
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">

@@ -21,15 +21,17 @@ type Props = {
 
 export function SavingsGoalsList({ savingsGoals, onAddGoal, onUpdateGoal, onRemoveGoal, onDeposit }: Props) {
   const [title, setTitle] = useState("");
-  const [targetAmount, setTargetAmount] = useState(500);
-  const [timelineWeeks, setTimelineWeeks] = useState(10);
+  const [targetAmount, setTargetAmount] = useState("500");
+  const [timelineWeeks, setTimelineWeeks] = useState("10");
 
   const addGoal = () => {
-    if (!title.trim() || targetAmount <= 0 || timelineWeeks <= 0) return;
-    onAddGoal({ title: title.trim(), targetAmount, timelineWeeks });
+    const parsedTargetAmount = Number(targetAmount);
+    const parsedTimelineWeeks = Number(timelineWeeks);
+    if (!title.trim() || parsedTargetAmount <= 0 || parsedTimelineWeeks <= 0) return;
+    onAddGoal({ title: title.trim(), targetAmount: parsedTargetAmount, timelineWeeks: parsedTimelineWeeks });
     setTitle("");
-    setTargetAmount(500);
-    setTimelineWeeks(10);
+    setTargetAmount("500");
+    setTimelineWeeks("10");
   };
 
   return (
@@ -48,14 +50,14 @@ export function SavingsGoalsList({ savingsGoals, onAddGoal, onUpdateGoal, onRemo
           <input
             type="number"
             value={targetAmount}
-            onChange={(event) => setTargetAmount(Number(event.target.value))}
+            onChange={(event) => setTargetAmount(event.target.value)}
             className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
             placeholder="Target in AUD"
           />
           <input
             type="number"
             value={timelineWeeks}
-            onChange={(event) => setTimelineWeeks(Number(event.target.value))}
+            onChange={(event) => setTimelineWeeks(event.target.value)}
             className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
             placeholder="Weeks"
           />
