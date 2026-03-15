@@ -140,7 +140,7 @@ export function ProfilePage() {
           <Button
             variant="outline"
             onClick={() =>
-              downloadJSON("moneygarden-profile-summary.json", {
+              downloadJSON("cashcraft-profile-summary.json", {
                 profile,
                 xp,
                 streak,

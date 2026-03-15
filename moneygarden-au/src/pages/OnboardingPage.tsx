@@ -70,7 +70,7 @@ export function OnboardingPage() {
                 <UserCircle2 className="h-4 w-4" />
                 Profile Setup
               </div>
-              <CardTitle className="mt-3 text-3xl font-black tracking-tight">Set up your MoneyGarden profile</CardTitle>
+              <CardTitle className="mt-3 text-3xl font-black tracking-tight">Set up your CashCraft profile</CardTitle>
               <CardDescription className="mt-2">
                 This replaces the old onboarding slides. Your profile helps personalise examples, state-specific notes, and the tone of the learning experience.
               </CardDescription>

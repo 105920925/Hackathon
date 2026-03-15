@@ -1,4 +1,4 @@
-﻿# MoneyGarden AU
+# CashCraft
 
 Production-ready MVP web app for Australian teens (13-19) to build financial responsibility through gamified learning.
 
@@ -25,9 +25,9 @@ Production-ready MVP web app for Australian teens (13-19) to build financial res
 
 ## Included Features
 - Landing/marketing page with CTA and product visuals
-- Multi-step onboarding flow
+- Profile setup flow
 - Full app layout with responsive sidebar + mobile bottom nav
-- Garden dashboard with animated growth and unlockable items
+- Skill-tree learning experience with animated progression
 - Learn hub with filters (`New`, `Popular`, `Quick 5-min`)
 - Interactive module player with:
   - quizzes
