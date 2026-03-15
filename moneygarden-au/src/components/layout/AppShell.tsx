@@ -22,7 +22,7 @@ export function AppShell() {
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
           <Link to="/app/tree" className="inline-flex items-center gap-2 text-lg font-semibold">
-            <GitBranch className="h-5 w-5 text-emerald-500" /> Learning Tree AU
+            <GitBranch className="h-5 w-5 text-emerald-500" /> CashCraft
           </Link>
           <Button variant="outline" size="sm" onClick={toggleDarkMode}>
             {darkMode ? "Light mode" : "Dark mode"}

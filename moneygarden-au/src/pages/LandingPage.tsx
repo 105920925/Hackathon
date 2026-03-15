@@ -14,7 +14,7 @@ export function LandingPage() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.16),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(14,165,233,0.18),transparent_35%),linear-gradient(180deg,#f8fffb_0%,#f8fafc_55%,#eef6ff_100%)] px-4 py-8 text-zinc-900 dark:bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.22),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(14,165,233,0.24),transparent_35%),linear-gradient(180deg,#022c22_0%,#0f172a_55%,#020617_100%)] dark:text-zinc-100">
       <div className="mx-auto max-w-6xl">
         <header className="mb-10 flex items-center justify-between">
-          <p className="text-xl font-black tracking-tight">Learning Tree AU</p>
+          <p className="text-xl font-black tracking-tight">CashCraft</p>
           <Button asChild>
             <Link to="/onboarding">Start Learning</Link>
           </Button>
@@ -27,7 +27,7 @@ export function LandingPage() {
               <span className="block text-emerald-600 dark:text-emerald-400">Grow branches from learning. Earn leaves from saving.</span>
             </h1>
             <p className="mb-6 text-base text-zinc-700 dark:text-zinc-300">
-              Built for Aussie teens 13-19. Learn TFNs, super, ASX basics, bank accounts, borrowing, and spending habits through interactive mini-modules with Australian examples and AUD language.
+              CashCraft is built for Aussie teens 13-19. Learn TFNs, super, ASX basics, bank accounts, borrowing, and spending habits through interactive mini-modules with Australian examples and AUD language.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg">
