@@ -10,6 +10,17 @@ export const seedState: AppState = {
     incomeStyle: "casual-job",
     confidence: "just-starting",
   },
+  profile: {
+    firstName: "Ava",
+    preferredName: "Ava",
+    dateOfBirth: "2009-08-14",
+    stateOrTerritory: "NSW",
+    ageRange: "16-17",
+    schoolYear: "Year 11-12",
+    goal: "car",
+    incomeStyle: "casual-job",
+    confidence: "just-starting",
+  },
   xp: 180,
   streak: 4,
   modules: {

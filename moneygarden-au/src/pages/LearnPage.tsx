@@ -6,7 +6,7 @@ import { ModuleCard } from "../components/modules/ModuleCard";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import type { ModuleFilter } from "../types";
 import { getTreeProgress } from "../lib/treeProgress";
-import { LearningTree } from "../components/tree/LearningTree";
+import { SkillTree } from "../components/tree/SkillTree";
 
 const filters: Array<"All" | ModuleFilter> = ["All", "New", "Popular", "Quick 5-min"];
 
@@ -50,12 +50,11 @@ export function LearnPage() {
           </div>
         </div>
 
-        <LearningTree
-          branchSegments={tree.branchSegments}
-          completedGoals={tree.completedGoals}
-          canopyComplete={tree.canopyComplete}
-          title="Tree progress preview"
-          subtitle="Savings goal leaves show here too, but branch growth is driven only by modules."
+        <SkillTree
+          modules={modules}
+          moduleState={moduleProgress}
+          title="Skill tree preview"
+          subtitle="Module progression only. Savings goals now live on their own dedicated page."
         />
       </section>
 

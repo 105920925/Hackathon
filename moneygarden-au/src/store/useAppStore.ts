@@ -2,10 +2,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { seedState } from "../data/seed";
 import { moduleMap, modules } from "../data/modules";
-import type { AppState, OnboardingData, SavingsGoal, SavingsGoalDraft, SavingsLogEntry } from "../types";
+import type { AppState, OnboardingData, SavingsGoal, SavingsGoalDraft, SavingsLogEntry, UserProfile } from "../types";
 
 type Store = AppState & {
-  completeOnboarding: (payload: OnboardingData) => void;
+  completeProfileSetup: (payload: UserProfile) => void;
+  updateProfile: (payload: UserProfile) => void;
   addXp: (amount: number) => void;
   addSavingsGoal: (payload: SavingsGoalDraft) => void;
   updateSavingsGoal: (goalId: string, payload: SavingsGoalDraft) => void;
@@ -110,6 +111,26 @@ function normalizeState(state?: LegacyState): AppState {
       ...(state?.onboarding ?? {}),
       goal: savedGoal ?? seedState.onboarding.goal,
     },
+    profile: {
+      ...seedState.profile,
+      ...(state?.profile ?? {}),
+      ageRange:
+        (state?.profile as Partial<UserProfile> | undefined)?.ageRange ??
+        (state?.onboarding as Partial<OnboardingData> | undefined)?.ageRange ??
+        seedState.profile.ageRange,
+      goal:
+        (state?.profile as Partial<UserProfile> | undefined)?.goal ??
+        savedGoal ??
+        seedState.profile.goal,
+      incomeStyle:
+        (state?.profile as Partial<UserProfile> | undefined)?.incomeStyle ??
+        (state?.onboarding as Partial<OnboardingData> | undefined)?.incomeStyle ??
+        seedState.profile.incomeStyle,
+      confidence:
+        (state?.profile as Partial<UserProfile> | undefined)?.confidence ??
+        (state?.onboarding as Partial<OnboardingData> | undefined)?.confidence ??
+        seedState.profile.confidence,
+    },
     modules: {
       ...seedState.modules,
       ...(state?.modules ?? {}),
@@ -136,7 +157,27 @@ export const useAppStore = create<Store>()(
   persist(
     (set) => ({
       ...seedState,
-      completeOnboarding: (payload) => set(() => ({ onboarding: payload, hasOnboarded: true })),
+      completeProfileSetup: (payload) =>
+        set(() => ({
+          profile: payload,
+          onboarding: {
+            ageRange: payload.ageRange,
+            goal: payload.goal,
+            incomeStyle: payload.incomeStyle,
+            confidence: payload.confidence,
+          },
+          hasOnboarded: true,
+        })),
+      updateProfile: (payload) =>
+        set(() => ({
+          profile: payload,
+          onboarding: {
+            ageRange: payload.ageRange,
+            goal: payload.goal,
+            incomeStyle: payload.incomeStyle,
+            confidence: payload.confidence,
+          },
+        })),
       addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
       addSavingsGoal: (payload) =>
         set((state) => ({

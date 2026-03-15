@@ -9,6 +9,7 @@ import { LearnPage } from "./pages/LearnPage";
 import { ModulePlayerPage } from "./pages/ModulePlayerPage";
 import { BudgetPage } from "./pages/BudgetPage";
 import { BorrowingPage } from "./pages/BorrowingPage";
+import { SavingsGoalsPage } from "./pages/SavingsGoalsPage";
 import { TaxesPage } from "./pages/TaxesPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="garden" element={<Navigate to="/app/tree" replace />} />
         <Route path="learn" element={<LearnPage />} />
         <Route path="learn/:moduleId" element={<ModulePlayerPage />} />
+        <Route path="savings" element={<SavingsGoalsPage />} />
         <Route path="budget" element={<BudgetPage />} />
         <Route path="borrowing" element={<BorrowingPage />} />
         <Route path="taxes" element={<TaxesPage />} />

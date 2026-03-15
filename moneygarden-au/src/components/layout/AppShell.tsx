@@ -1,4 +1,4 @@
-import { BookOpen, GitBranch, HandCoins, ReceiptText, UserCircle2, Wallet } from "lucide-react";
+import { BookOpen, GitBranch, Goal, HandCoins, UserCircle2, Wallet } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
@@ -7,9 +7,9 @@ import { useAppStore } from "../../store/useAppStore";
 const navItems = [
   { to: "/app/tree", label: "Learning Tree", icon: GitBranch },
   { to: "/app/learn", label: "Learn", icon: BookOpen },
+  { to: "/app/savings", label: "Goals", icon: Goal },
   { to: "/app/budget", label: "Budget", icon: Wallet },
   { to: "/app/borrowing", label: "Borrowing", icon: HandCoins },
-  { to: "/app/taxes", label: "Taxes", icon: ReceiptText },
   { to: "/app/profile", label: "Profile", icon: UserCircle2 },
 ];
 

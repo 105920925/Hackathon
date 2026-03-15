@@ -3,6 +3,9 @@ import type { ModuleStep } from "../../types";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { cn } from "../../lib/utils";
+import { ActivityStepContent } from "./ActivityStepContent";
+import { LessonStepContent } from "./LessonStepContent";
+import { QuizSetStepContent } from "./QuizSetStepContent";
 
 type Props = {
   step: ModuleStep;
@@ -20,6 +23,7 @@ export function ModuleStepRenderer({ step, completed, onStepComplete }: Props) {
     if (step.type !== "match") return {};
     return Object.fromEntries(step.pairs.map((pair) => [pair.item, null]));
   });
+  const [customStatus, setCustomStatus] = useState({ ready: false, score: 0 });
 
   const matchAccuracy = useMemo(() => {
     if (step.type !== "match") return 0;
@@ -33,6 +37,8 @@ export function ModuleStepRenderer({ step, completed, onStepComplete }: Props) {
     switch (step.type) {
       case "info":
         return true;
+      case "lesson":
+        return customStatus.ready;
       case "quiz":
         return selected !== null;
       case "slider":
@@ -41,15 +47,20 @@ export function ModuleStepRenderer({ step, completed, onStepComplete }: Props) {
         return scenarioChoice !== null;
       case "match":
         return Object.values(assignments).every((value) => value !== null);
+      case "quiz-set":
+      case "activity":
+        return customStatus.ready;
       default:
         return false;
     }
-  }, [assignments, completed, scenarioChoice, selected, step.type]);
+  }, [assignments, completed, customStatus.ready, scenarioChoice, selected, step.type]);
 
   const getScore = () => {
     switch (step.type) {
       case "info":
         return 100;
+      case "lesson":
+        return customStatus.score;
       case "quiz":
         return selected === step.correctIndex ? 100 : 40;
       case "slider": {
@@ -61,6 +72,9 @@ export function ModuleStepRenderer({ step, completed, onStepComplete }: Props) {
         return scenarioChoice === null ? 0 : step.choices[scenarioChoice].score;
       case "match":
         return matchAccuracy;
+      case "quiz-set":
+      case "activity":
+        return customStatus.score;
       default:
         return 0;
     }
@@ -91,6 +105,8 @@ export function ModuleStepRenderer({ step, completed, onStepComplete }: Props) {
           ))}
         </ul>
       )}
+
+      {step.type === "lesson" && <LessonStepContent step={step} onStatusChange={setCustomStatus} />}
 
       {step.type === "quiz" && (
         <div className="space-y-3">
@@ -204,6 +220,10 @@ export function ModuleStepRenderer({ step, completed, onStepComplete }: Props) {
           <p className="text-sm text-muted-foreground">Accuracy: {matchAccuracy}%</p>
         </div>
       )}
+
+      {step.type === "quiz-set" && <QuizSetStepContent step={step} onStatusChange={setCustomStatus} />}
+
+      {step.type === "activity" && <ActivityStepContent step={step} onStatusChange={setCustomStatus} />}
 
       <div className="flex items-center gap-3">
         <Button onClick={complete} disabled={!isReady || completed}>

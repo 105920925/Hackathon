@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { LearningModule } from "../../types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
+import { ModuleIconGlyph } from "./moduleIcons";
 
 type Props = {
   module: LearningModule;
@@ -16,9 +17,14 @@ export function ModuleCard({ module, completion, completed }: Props) {
       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${module.themeColor}`} />
       <CardHeader>
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Module {module.moduleNumber}
-          </span>
+          <div className="inline-flex items-center gap-2">
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Module {module.moduleNumber}
+            </span>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted/80 text-muted-foreground">
+              <ModuleIconGlyph icon={module.icon} className="h-4 w-4" />
+            </span>
+          </div>
           {completed ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5" />

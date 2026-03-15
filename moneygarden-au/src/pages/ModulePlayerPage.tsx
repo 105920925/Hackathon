@@ -6,6 +6,7 @@ import { ModuleStepRenderer } from "../components/modules/ModuleStepRenderer";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { useAppStore } from "../store/useAppStore";
+import { ModuleIconGlyph } from "../components/modules/moduleIcons";
 
 export function ModulePlayerPage() {
   const { moduleId = "" } = useParams();
@@ -29,6 +30,7 @@ export function ModulePlayerPage() {
   const doneCount = Object.keys(completedSteps).length;
   const progressPct = Math.round(((doneCount + (moduleProgress?.highestStep ?? 0)) / module.steps.length) * 100);
   const moduleScore = doneCount === 0 ? (moduleProgress?.score ?? 0) : Math.round(scoreSum / doneCount);
+  const clearedCurrentStep = Boolean(completedSteps[step.id]) || Boolean(moduleProgress?.completed) || (moduleProgress?.highestStep ?? 0) > index;
 
   const onCompleteStep = ({ stepXp, score }: { stepXp: number; score: number }) => {
     if (completedSteps[step.id]) return;
@@ -53,7 +55,12 @@ export function ModulePlayerPage() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>{module.title}</CardTitle>
+          <div className="flex items-center gap-3">
+            <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${module.themeColor} text-white shadow-lg`}>
+              <ModuleIconGlyph icon={module.icon} className="h-6 w-6" />
+            </div>
+            <CardTitle>{module.title}</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="h-2 rounded-full bg-muted">
@@ -68,16 +75,23 @@ export function ModulePlayerPage() {
         </CardContent>
       </Card>
 
-      <ModuleStepRenderer step={step} completed={Boolean(completedSteps[step.id])} onStepComplete={onCompleteStep} />
+      <ModuleStepRenderer
+        key={step.id}
+        step={step}
+        completed={Boolean(completedSteps[step.id]) || clearedCurrentStep}
+        onStepComplete={onCompleteStep}
+      />
 
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => setIndex((prev) => Math.max(0, prev - 1))} disabled={index === 0}>
           Previous
         </Button>
         {!atLastStep ? (
-          <Button onClick={() => setIndex((prev) => Math.min(module.steps.length - 1, prev + 1))}>Next Step</Button>
+          <Button onClick={() => setIndex((prev) => Math.min(module.steps.length - 1, prev + 1))} disabled={!clearedCurrentStep}>
+            Next Step
+          </Button>
         ) : (
-          <Button onClick={finishModule} className="inline-flex items-center gap-2">
+          <Button onClick={finishModule} className="inline-flex items-center gap-2" disabled={!clearedCurrentStep}>
             <CheckCircle2 className="h-4 w-4" /> Finish + Grow Branch
           </Button>
         )}

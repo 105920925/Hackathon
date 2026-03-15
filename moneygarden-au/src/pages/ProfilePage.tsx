@@ -1,15 +1,16 @@
-import { useMemo } from "react";
-import { Award, Download, GitBranch, Leaf, RotateCcw } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Award, Download, GitBranch, RotateCcw, UserCircle2 } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useAppStore } from "../store/useAppStore";
 import { modules } from "../data/modules";
 import { downloadJSON, formatAUD } from "../lib/utils";
-import { useShallow } from "zustand/react/shallow";
 import { getTreeProgress } from "../lib/treeProgress";
+import type { UserProfile } from "../types";
 
 export function ProfilePage() {
-  const { badges, moduleState, savingsGoals, savingsLog, resetProgress, darkMode, toggleDarkMode, xp, streak } = useAppStore(
+  const { badges, moduleState, savingsGoals, savingsLog, resetProgress, darkMode, toggleDarkMode, xp, streak, profile, updateProfile } = useAppStore(
     useShallow((state) => ({
       badges: state.badges,
       moduleState: state.modules,
@@ -20,8 +21,11 @@ export function ProfilePage() {
       toggleDarkMode: state.toggleDarkMode,
       xp: state.xp,
       streak: state.streak,
+      profile: state.profile,
+      updateProfile: state.updateProfile,
     })),
   );
+  const [draft, setDraft] = useState<UserProfile>(profile);
 
   const completedModules = useMemo(() => modules.filter((module) => moduleState[module.id]?.completed), [moduleState]);
   const tree = getTreeProgress(moduleState, savingsGoals);
@@ -30,32 +34,68 @@ export function ProfilePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Profile & Progress</h1>
-        <p className="text-sm text-muted-foreground">Track your learning tree, completed modules, savings goals, and app preferences.</p>
+        <p className="text-sm text-muted-foreground">Edit your profile, export your progress, and keep your learning setup personal.</p>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
         <Card>
-          <CardHeader><CardTitle className="text-sm">XP</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-black">{xp}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Streak</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-black">{streak} days</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Modules completed</CardTitle></CardHeader>
-          <CardContent className="flex items-center gap-2">
-            <GitBranch className="h-5 w-5 text-emerald-500" />
-            <p className="text-3xl font-black">{tree.completedModules}/{tree.totalModules}</p>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCircle2 className="h-5 w-5 text-emerald-500" />
+              Profile details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-2 text-sm font-medium">
+              <span>First name</span>
+              <input value={draft.firstName} onChange={(event) => setDraft((prev) => ({ ...prev, firstName: event.target.value }))} className="h-11 rounded-xl border border-border bg-background px-3" />
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              <span>Preferred name</span>
+              <input value={draft.preferredName} onChange={(event) => setDraft((prev) => ({ ...prev, preferredName: event.target.value }))} className="h-11 rounded-xl border border-border bg-background px-3" />
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              <span>Date of birth</span>
+              <input type="date" value={draft.dateOfBirth} onChange={(event) => setDraft((prev) => ({ ...prev, dateOfBirth: event.target.value }))} className="h-11 rounded-xl border border-border bg-background px-3" />
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              <span>State / territory</span>
+              <select value={draft.stateOrTerritory} onChange={(event) => setDraft((prev) => ({ ...prev, stateOrTerritory: event.target.value as UserProfile["stateOrTerritory"] }))} className="h-11 rounded-xl border border-border bg-background px-3">
+                {["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              <span>School year / stage</span>
+              <select value={draft.schoolYear} onChange={(event) => setDraft((prev) => ({ ...prev, schoolYear: event.target.value as UserProfile["schoolYear"] }))} className="h-11 rounded-xl border border-border bg-background px-3">
+                {["Year 7-8", "Year 9-10", "Year 11-12", "Finished school", "TAFE / Uni"].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              <span>Main goal</span>
+              <select value={draft.goal} onChange={(event) => setDraft((prev) => ({ ...prev, goal: event.target.value as UserProfile["goal"] }))} className="h-11 rounded-xl border border-border bg-background px-3">
+                {["car", "phone", "travel", "emergency"].map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="md:col-span-2">
+              <Button onClick={() => updateProfile(draft)}>Save profile changes</Button>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Goal leaves earned</CardTitle></CardHeader>
-          <CardContent className="flex items-center gap-2">
-            <Leaf className="h-5 w-5 text-teal-500" />
-            <p className="text-3xl font-black">{tree.completedGoals}</p>
-          </CardContent>
-        </Card>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <MetricCard label="XP" value={String(xp)} />
+          <MetricCard label="Streak" value={`${streak} days`} />
+          <MetricCard label="Modules completed" value={`${tree.completedModules}/${tree.totalModules}`} />
+          <MetricCard label="Total saved" value={formatAUD(savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0))} />
+        </section>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
@@ -78,70 +118,61 @@ export function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Completed Modules</CardTitle>
+            <CardTitle>Completed modules</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {completedModules.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No modules completed yet.</p>
-            ) : (
-              completedModules.map((item) => (
-                <div key={item.id} className="rounded-xl border border-border p-3 text-sm">
-                  <p className="font-medium">{item.title}</p>
-                  <p className="text-muted-foreground">Score: {moduleState[item.id]?.score ?? 0}%</p>
-                </div>
-              ))
-            )}
+            {completedModules.map((item) => (
+              <div key={item.id} className="rounded-xl border border-border p-3 text-sm">
+                <p className="font-medium">{item.title}</p>
+                <p className="text-muted-foreground">Score: {moduleState[item.id]?.score ?? 0}%</p>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </section>
 
       <Card>
         <CardHeader>
-          <CardTitle>Progress export & settings</CardTitle>
+          <CardTitle>Settings & export</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl bg-muted/50 p-4 text-sm">
-              <p className="text-muted-foreground">Active savings goals</p>
-              <p className="mt-1 text-2xl font-black">{savingsGoals.length}</p>
-            </div>
-            <div className="rounded-2xl bg-muted/50 p-4 text-sm">
-              <p className="text-muted-foreground">Total saved across goals</p>
-              <p className="mt-1 text-2xl font-black">{formatAUD(savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0))}</p>
-            </div>
-            <div className="rounded-2xl bg-muted/50 p-4 text-sm">
-              <p className="text-muted-foreground">Canopy status</p>
-              <p className="mt-1 text-2xl font-black">{tree.canopyComplete ? "Unlocked" : "In progress"}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={toggleDarkMode}>{darkMode ? "Switch to light" : "Switch to dark"}</Button>
-            <Button
-              variant="outline"
-              className="inline-flex items-center gap-2"
-              onClick={() =>
-                downloadJSON("learning-tree-summary.json", {
-                  xp,
-                  streak,
-                  savingsGoals,
-                  savingsLog,
-                  tree,
-                  completedModules: completedModules.map((module) => ({
-                    id: module.id,
-                    title: module.title,
-                    score: moduleState[module.id]?.score ?? 0,
-                  })),
-                })
-              }
-            >
-              <Download className="h-4 w-4" /> Export JSON
-            </Button>
-            <Button variant="outline" className="inline-flex items-center gap-2" onClick={resetProgress}>
-              <RotateCcw className="h-4 w-4" /> Reset Progress
-            </Button>
-          </div>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={toggleDarkMode}>{darkMode ? "Switch to light" : "Switch to dark"}</Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              downloadJSON("moneygarden-profile-summary.json", {
+                profile,
+                xp,
+                streak,
+                savingsGoals,
+                savingsLog,
+                tree,
+              })
+            }
+          >
+            <Download className="h-4 w-4" /> Export JSON
+          </Button>
+          <Button variant="outline" onClick={resetProgress}>
+            <RotateCcw className="h-4 w-4" /> Reset Progress
+          </Button>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <GitBranch className="h-4 w-4 text-emerald-500" />
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-3xl font-black">{value}</p>
+      </CardContent>
+    </Card>
   );
 }
