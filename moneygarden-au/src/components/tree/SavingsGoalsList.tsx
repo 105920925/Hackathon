@@ -23,6 +23,8 @@ export function SavingsGoalsList({ savingsGoals, onAddGoal, onUpdateGoal, onRemo
   const [title, setTitle] = useState("");
   const [targetAmount, setTargetAmount] = useState("500");
   const [timelineWeeks, setTimelineWeeks] = useState("10");
+  const inputClassName =
+    "h-11 w-full appearance-none rounded-xl border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-[border-color,box-shadow] focus:border-emerald-400 focus:shadow-[0_0_0_1px_rgba(52,211,153,0.35)]";
 
   const addGoal = () => {
     const parsedTargetAmount = Number(targetAmount);
@@ -40,25 +42,25 @@ export function SavingsGoalsList({ savingsGoals, onAddGoal, onUpdateGoal, onRemo
         <CardHeader>
           <CardTitle>Create a savings goal</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr_auto]">
+        <CardContent className="grid items-center gap-3 [&>*+*]:mt-0 md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto]">
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+            className={`${inputClassName} md:translate-y-[6px]`}
             placeholder="New goal title"
           />
           <input
             type="number"
             value={targetAmount}
             onChange={(event) => setTargetAmount(event.target.value)}
-            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+            className={inputClassName}
             placeholder="Target in AUD"
           />
           <input
             type="number"
             value={timelineWeeks}
             onChange={(event) => setTimelineWeeks(event.target.value)}
-            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+            className={inputClassName}
             placeholder="Weeks"
           />
           <Button onClick={addGoal} className="h-11 inline-flex items-center gap-2">

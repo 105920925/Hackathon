@@ -3,13 +3,42 @@ import { Gem, Target } from "lucide-react";
 import type { SavingsGoal } from "../../types";
 import { formatAUD } from "../../lib/utils";
 
+type NodePoint = {
+  x: number;
+  y: number;
+};
+
 type Props = {
   savingsGoals: SavingsGoal[];
 };
 
+const HUB_POINT: NodePoint = { x: 210, y: 150 };
+
+function getConstellationPoints(count: number): NodePoint[] {
+  if (count <= 0) return [];
+
+  if (count === 1) {
+    return [{ x: HUB_POINT.x, y: 64 }];
+  }
+
+  const startAngle = count === 2 ? 225 : 210;
+  const endAngle = count === 2 ? 315 : 330;
+  const step = (endAngle - startAngle) / Math.max(1, count - 1);
+
+  return Array.from({ length: count }, (_, index) => {
+    const angle = (startAngle + step * index) * (Math.PI / 180);
+
+    return {
+      x: Number((HUB_POINT.x + Math.cos(angle) * 128).toFixed(2)),
+      y: Number((HUB_POINT.y + Math.sin(angle) * 94).toFixed(2)),
+    };
+  });
+}
+
 export function SavingsGoalsHero({ savingsGoals }: Props) {
   const completed = savingsGoals.filter((goal) => Boolean(goal.completedAt)).length;
   const totalSaved = savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+  const constellationPoints = getConstellationPoints(savingsGoals.length);
 
   return (
     <section className="rounded-[36px] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.22),transparent_24%),radial-gradient(circle_at_80%_16%,rgba(14,165,233,0.18),transparent_20%),linear-gradient(135deg,#eff9ff,#f8fdff)] p-6 shadow-[0_30px_90px_-52px_rgba(14,116,144,0.6)] dark:bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_24%),radial-gradient(circle_at_80%_16%,rgba(14,165,233,0.18),transparent_20%),linear-gradient(135deg,#07111d,#0a1627)]">
@@ -37,13 +66,15 @@ export function SavingsGoalsHero({ savingsGoals }: Props) {
           <svg viewBox="0 0 420 280" className="relative z-10 h-full w-full">
             {savingsGoals.map((goal, index) => {
               const pct = Math.min(goal.currentAmount / goal.targetAmount, 1);
-              const x = 80 + index * 110;
-              const y = 90 + (index % 2) * 70;
+              const point = constellationPoints[index] ?? HUB_POINT;
+              const x = point.x;
+              const y = point.y;
+
               return (
                 <g key={goal.id}>
                   <motion.line
-                    x1="210"
-                    y1="140"
+                    x1={HUB_POINT.x}
+                    y1={HUB_POINT.y}
                     x2={x}
                     y2={y}
                     stroke="rgba(14,165,233,0.38)"
@@ -69,15 +100,15 @@ export function SavingsGoalsHero({ savingsGoals }: Props) {
             })}
 
             <motion.circle
-              cx="210"
-              cy="140"
+              cx={HUB_POINT.x}
+              cy={HUB_POINT.y}
               r="42"
               fill="rgba(14,165,233,0.9)"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 180, damping: 14 }}
             />
-            <foreignObject x="180" y="110" width="60" height="60">
+            <foreignObject x={HUB_POINT.x - 30} y={HUB_POINT.y - 30} width="60" height="60">
               <div className="flex h-full w-full items-center justify-center text-white">
                 <Gem className="h-8 w-8" />
               </div>

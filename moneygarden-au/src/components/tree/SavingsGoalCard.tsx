@@ -83,19 +83,26 @@ export function SavingsGoalCard({ goal, onDeposit, onSave, onRemove }: Props) {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-muted-foreground">A$</span>
+            <div className="grid grid-cols-[104px_minmax(0,1fr)] items-center gap-2">
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">A$</span>
                 <input
+                  type="number"
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-background pl-8 pr-3 text-sm"
+                  className="h-10 w-full appearance-none rounded-xl border border-border bg-background pl-8 pr-3 text-sm text-foreground outline-none transition-[border-color,box-shadow] [appearance:textfield] placeholder:text-muted-foreground focus:border-emerald-400 focus:shadow-[0_0_0_1px_rgba(52,211,153,0.35)]"
                   inputMode="decimal"
+                  min="1"
+                  step="1"
+                  aria-label={`Add savings amount for ${goal.title}`}
                 />
               </div>
-              <Button onClick={deposit} className="inline-flex items-center gap-2">
+              <Button
+                onClick={deposit}
+                aria-label={`Add savings to ${goal.title}`}
+                className="h-10 w-10 min-w-0 justify-self-start p-0"
+              >
                 <Leaf className="h-4 w-4" />
-                Add savings
               </Button>
             </div>
             {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
