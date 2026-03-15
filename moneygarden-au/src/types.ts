@@ -13,7 +13,7 @@ export type ModuleIcon =
 
 export type OnboardingData = {
   ageRange: "13-15" | "16-17" | "18-19";
-  goal: "car" | "phone" | "travel" | "emergency";
+  goal: string;
   incomeStyle: "casual-job" | "allowance" | "mixed";
   confidence: "just-starting" | "getting-there" | "pretty-confident";
 };

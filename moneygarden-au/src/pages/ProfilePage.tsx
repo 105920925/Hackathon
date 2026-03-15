@@ -48,7 +48,11 @@ export function ProfilePage() {
           <CardContent className="grid gap-3 md:grid-cols-2">
             <label className="space-y-2 text-sm font-medium">
               <span>First name</span>
-              <input value={draft.firstName} onChange={(event) => setDraft((prev) => ({ ...prev, firstName: event.target.value }))} className="h-11 rounded-xl border border-border bg-background px-3" />
+              <input
+                value={draft.firstName}
+                onChange={(event) => setDraft((prev) => ({ ...prev, firstName: event.target.value }))}
+                className="h-11 rounded-xl border border-border bg-background px-3 md:translate-y-2"
+              />
             </label>
             <label className="space-y-2 text-sm font-medium">
               <span>Preferred name</span>
@@ -76,13 +80,12 @@ export function ProfilePage() {
             </label>
             <label className="space-y-2 text-sm font-medium">
               <span>Main goal</span>
-              <select value={draft.goal} onChange={(event) => setDraft((prev) => ({ ...prev, goal: event.target.value as UserProfile["goal"] }))} className="h-11 rounded-xl border border-border bg-background px-3">
-                {["car", "phone", "travel", "emergency"].map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+              <input
+                value={draft.goal}
+                onChange={(event) => setDraft((prev) => ({ ...prev, goal: event.target.value }))}
+                className="h-11 rounded-xl border border-border bg-background px-3"
+                placeholder="Example: First car, Europe trip, emergency fund"
+              />
             </label>
             <div className="md:col-span-2">
               <Button onClick={() => updateProfile(draft)}>Save profile changes</Button>
@@ -136,7 +139,9 @@ export function ProfilePage() {
           <CardTitle>Settings & export</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={toggleDarkMode}>{darkMode ? "Switch to light" : "Switch to dark"}</Button>
+          <Button variant="outline" className="md:translate-y-[10px]" onClick={toggleDarkMode}>
+            {darkMode ? "Switch to light" : "Switch to dark"}
+          </Button>
           <Button
             variant="outline"
             onClick={() =>

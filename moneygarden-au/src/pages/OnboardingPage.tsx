@@ -15,7 +15,7 @@ const initialProfile: UserProfile = {
   stateOrTerritory: "NSW",
   ageRange: "16-17",
   schoolYear: "Year 11-12",
-  goal: "car",
+  goal: "",
   incomeStyle: "casual-job",
   confidence: "just-starting",
 };
@@ -155,16 +155,12 @@ export function OnboardingPage() {
                 </label>
                 <label className="space-y-2 text-sm font-medium">
                   <span>Main money goal</span>
-                  <select
+                  <input
                     value={profile.goal}
-                    onChange={(event) => setProfile((prev) => ({ ...prev, goal: event.target.value as UserProfile["goal"] }))}
+                    onChange={(event) => setProfile((prev) => ({ ...prev, goal: event.target.value }))}
                     className="h-11 w-full rounded-xl border border-border bg-background px-3"
-                  >
-                    <option value="car">Car</option>
-                    <option value="phone">Phone</option>
-                    <option value="travel">Travel</option>
-                    <option value="emergency">Emergency fund</option>
-                  </select>
+                    placeholder="Example: First car, holiday, emergency fund"
+                  />
                 </label>
                 <label className="space-y-2 text-sm font-medium">
                   <span>Income style</span>

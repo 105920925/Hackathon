@@ -47,7 +47,7 @@ const createId = (prefix: string) => `${prefix}-${Math.random().toString(36).sli
 
 const initialOnboarding: OnboardingData = {
   ageRange: "16-17",
-  goal: "car",
+  goal: "",
   incomeStyle: "casual-job",
   confidence: "just-starting",
 };
@@ -181,12 +181,9 @@ function normalizeBudget(state?: LegacyState): BudgetCategory[] {
 function normalizeState(state?: LegacyState): AppState {
   const savingsGoals = normalizeSavingsGoals(state);
   const rawGoal = (state?.onboarding as { goal?: string } | undefined)?.goal;
-  const savedGoal =
-    rawGoal === "holiday"
-      ? "travel"
-      : rawGoal === "car" || rawGoal === "phone" || rawGoal === "travel" || rawGoal === "emergency"
-        ? rawGoal
-        : undefined;
+  const savedGoal = typeof rawGoal === "string" ? rawGoal.trim() : undefined;
+  const rawProfileGoal = (state?.profile as Partial<UserProfile> | undefined)?.goal;
+  const profileGoal = typeof rawProfileGoal === "string" ? rawProfileGoal.trim() : undefined;
 
   return {
     ...seedState,
@@ -194,7 +191,7 @@ function normalizeState(state?: LegacyState): AppState {
     onboarding: {
       ...seedState.onboarding,
       ...(state?.onboarding ?? {}),
-      goal: savedGoal ?? seedState.onboarding.goal,
+      goal: savedGoal ?? initialOnboarding.goal,
     },
     profile: {
       ...seedState.profile,
@@ -204,9 +201,9 @@ function normalizeState(state?: LegacyState): AppState {
         (state?.onboarding as Partial<OnboardingData> | undefined)?.ageRange ??
         seedState.profile.ageRange,
       goal:
-        (state?.profile as Partial<UserProfile> | undefined)?.goal ??
+        profileGoal ??
         savedGoal ??
-        seedState.profile.goal,
+        initialProfile.goal,
       incomeStyle:
         (state?.profile as Partial<UserProfile> | undefined)?.incomeStyle ??
         (state?.onboarding as Partial<OnboardingData> | undefined)?.incomeStyle ??
