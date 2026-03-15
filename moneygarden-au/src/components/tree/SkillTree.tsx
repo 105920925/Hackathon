@@ -166,6 +166,8 @@ export function SkillTree({ modules, moduleState, title, subtitle }: Props) {
   const selectedIndex = states.findIndex((item) => item.module.id === selectedId);
   const selectedState = selectedIndex >= 0 ? states[selectedIndex] : states[0];
   const completedCount = states.filter((item) => item.completed).length;
+  const overallProgress =
+    modules.length === 0 ? 0 : Math.round((completedCount / modules.length) * 100);
   const childIndexes = connectors
     .filter(([from]) => from === selectedIndex)
     .map(([, to]) => to)
@@ -176,17 +178,47 @@ export function SkillTree({ modules, moduleState, title, subtitle }: Props) {
       : childIndexes
           .map((index) => nodeDisplayTitles[index] ?? `Module ${index + 1}`)
           .join(", ");
+  const selectedCompletedSteps = selectedState
+    ? selectedState.completed
+      ? selectedState.module.steps.length
+      : Math.min(
+          moduleState[selectedState.module.id]?.highestStep ?? 0,
+          selectedState.module.steps.length,
+        )
+    : 0;
+  const selectedStepProgress =
+    selectedState?.module.steps.length
+      ? Math.round((selectedCompletedSteps / selectedState.module.steps.length) * 100)
+      : 0;
 
   return (
     <section className="rounded-[30px] border border-border/80 bg-background/95 p-5 shadow-sm">
-      <div className="mb-5">
-        <h2 className="text-2xl font-bold tracking-tight">
-          {title ?? "Learning Tree"}
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          {subtitle ??
-            "Begin at Fundamentals. Each completed lesson unlocks the next branch in your learning tree."}
-        </p>
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {title ?? "Learning Tree"}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            {subtitle ??
+              "Begin at Fundamentals. Each completed lesson unlocks the next branch in your learning tree."}
+          </p>
+        </div>
+
+        <div className="min-w-[240px] rounded-2xl border border-border bg-muted/25 p-4">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <span>Overall progress</span>
+            <span>{overallProgress}%</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-sky-400 transition-all duration-500"
+              style={{ width: `${overallProgress}%` }}
+            />
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {completedCount} of {modules.length} modules completed
+          </p>
+        </div>
       </div>
 
       <div className="rounded-[28px] border border-emerald-950/20 bg-[linear-gradient(180deg,#0a1720,#0b1828)] p-5 text-slate-100">
@@ -344,6 +376,31 @@ export function SkillTree({ modules, moduleState, title, subtitle }: Props) {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {selectedState.module.shortDescription}
           </p>
+
+          <div className="mt-5 rounded-2xl border border-border bg-muted/20 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Module progress
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {selectedCompletedSteps} of {selectedState.module.steps.length} steps completed
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold">{selectedStepProgress}%</p>
+                <p className="text-xs text-muted-foreground">
+                  Score {moduleState[selectedState.module.id]?.score ?? 0}%
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-sky-400 transition-all duration-500"
+                style={{ width: `${selectedStepProgress}%` }}
+              />
+            </div>
+          </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <InfoCard label="Difficulty" value={selectedState.module.difficulty} />
